@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="image-slot.js"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#04090e;font-family:'Archivo',system-ui,sans-serif;}
+a{color:#00b4d8;text-decoration:none}a:hover{color:#48cae4}
+:root{--bg:#051422;--bg2:#081c30;--card:#0b2438;--card2:#12314b;--line:rgba(148,196,230,0.14);--tx:#eaf6fd;--tx2:#9fc3da;--tx3:#638aa3;--acc:#00b4d8;--accD:#0077b6;--chip:rgba(0,180,216,0.12);--warn:#ffb703;--dang:#ff5d7d;--ok:#33d6c3;--inputbg:#08192b;--sheet:#081c30;--shadow:rgba(0,0,0,0.5)}
+@keyframes dmDraw{to{stroke-dashoffset:0}}
+@keyframes dmFade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+input,textarea,button{font-family:inherit;color:inherit}
+input[type=range]{-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;background:var(--line);outline:none;margin:10px 0}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--acc);border:3px solid var(--bg2);box-shadow:0 1px 6px rgba(0,0,0,0.4);cursor:pointer}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+input:focus,textarea:focus{outline:none;border-color:var(--acc)}
+[data-scroll]{scrollbar-width:none}
+[data-scroll]::-webkit-scrollbar{display:none}
+</style>
+</helmet>
+<section style="padding:56px 64px 80px;display:flex;flex-direction:column;gap:28px;">
+<div style="display:flex;flex-direction:column;gap:6px;">
+<div style="font:600 12px 'IBM Plex Mono',monospace;color:#00b4d8;letter-spacing:0.22em;">DIVEMAP</div>
+<div style="font:800 30px 'Archivo',sans-serif;color:#eaf6fd;">AllTrails for scuba diving — 5 core screens</div>
+<div style="font:400 13.5px 'Archivo',sans-serif;color:#638aa3;max-width:640px;">Built by divers, for divers. Dark mode default · toggle theme and metric/imperial units in Tweaks. Screens 2–5 are interactive: tabs, live deco planner, report flow.</div>
+</div>
+<div style="display:flex;gap:44px;align-items:flex-start;flex-wrap:wrap;">
+
+<!-- ══════════ SCREEN 1 · DISCOVERY MAP ══════════ -->
+<div data-screen-label="01 Discovery Map" style="display:flex;flex-direction:column;{{ tv }}">
+<div style="font:600 11px 'IBM Plex Mono',monospace;color:#638aa3;letter-spacing:0.14em;margin:0 0 12px 6px;">01 · DISCOVERY MAP</div>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ mapFrameDark }}" hint-size="402px,874px">
+<div style="position:relative;width:100%;height:100%;min-height:820px;background:#04121f;overflow:hidden;">
+  <div style="position:absolute;inset:0;background:radial-gradient(120% 90% at 68% 22%, #0b2e4e 0%, #072138 34%, #041627 62%, #030f1c 100%);"></div>
+  <div style="position:absolute;inset:0;background:repeating-radial-gradient(95% 75% at 68% 24%, rgba(0,180,216,0.055) 0px, rgba(0,180,216,0.055) 1.5px, transparent 1.5px, transparent 44px);"></div>
+  <div style="position:absolute;top:-90px;right:-130px;width:320px;height:360px;border-radius:46% 54% 60% 40% / 50% 45% 55% 50%;background:#0e3556;opacity:0.5;"></div>
+  <div style="position:absolute;top:230px;left:-60px;width:180px;height:200px;border-radius:55% 45% 40% 60% / 45% 55% 50% 50%;background:#0c2c48;opacity:0.45;"></div>
+  <div style="position:absolute;top:200px;right:24px;font:500 9px 'IBM Plex Mono',monospace;color:rgba(159,195,218,0.4);letter-spacing:0.3em;">RAS MUHAMMAD</div>
+  <div style="position:absolute;top:420px;left:30px;font:500 9px 'IBM Plex Mono',monospace;color:rgba(159,195,218,0.35);letter-spacing:0.3em;">GULF OF AQABA</div>
+  <sc-for list="{{ pins }}" as="p" hint-placeholder-count="5">
+    <div style="position:absolute;left:{{ p.x }};top:{{ p.y }};transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:5px;z-index:5;">
+      <div style="width:{{ p.s }};height:{{ p.s }};border-radius:50%;background:{{ p.bg }};border:2px solid #eaf6fd;box-shadow:0 0 0 6px {{ p.ring }}, 0 2px 10px rgba(0,0,0,0.5);"></div>
+      <sc-if value="{{ p.lbl }}" hint-placeholder-val="{{ false }}">
+        <div style="font:600 10px 'IBM Plex Mono',monospace;color:#eaf6fd;background:rgba(4,18,31,0.85);border:1px solid rgba(148,196,230,0.2);padding:4px 8px;border-radius:7px;letter-spacing:0.04em;white-space:nowrap;">{{ p.lbl }}</div>
+      </sc-if>
+    </div>
+  </sc-for>
+  <div style="position:absolute;top:64px;left:0;right:0;z-index:10;display:flex;flex-direction:column;gap:9px;">
+    <div style="padding:0 14px;">
+      <div style="display:flex;align-items:center;gap:10px;background:rgba(6,24,40,0.88);border:1px solid rgba(148,196,230,0.18);backdrop-filter:blur(10px);border-radius:13px;padding:12px 14px;">
+        <svg width="15" height="15" viewBox="0 0 15 15"><circle cx="6.2" cy="6.2" r="4.8" stroke="#9fc3da" stroke-width="1.6" fill="none"></circle><line x1="9.9" y1="9.9" x2="13.6" y2="13.6" stroke="#9fc3da" stroke-width="1.6" stroke-linecap="round"></line></svg>
+        <div style="font:500 13px 'Archivo',sans-serif;color:#7fa5bd;">Search 10,000+ dive sites</div>
+      </div>
+    </div>
+    <div data-scroll="1" style="display:flex;gap:7px;overflow-x:auto;padding:0 14px;">
+      <sc-for list="{{ chips }}" as="c" hint-placeholder-count="4">
+        <div style="flex:none;font:600 11.5px 'Archivo',sans-serif;color:{{ c.col }};background:{{ c.bg }};border:1px solid {{ c.bd }};border-radius:999px;padding:8px 13px;white-space:nowrap;">{{ c.n }}</div>
+      </sc-for>
+    </div>
+    <div style="padding:0 14px;">
+      <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(6,24,40,0.75);border-radius:999px;padding:5px 10px;width:fit-content;">
+        <div style="width:6px;height:6px;border-radius:50%;background:#33d6c3;"></div>
+        <div style="font:600 9px 'IBM Plex Mono',monospace;color:#9fc3da;letter-spacing:0.1em;">OFFLINE · SINAI MAPS CACHED</div>
+      </div>
+    </div>
+  </div>
+  <div style="position:absolute;right:16px;bottom:436px;z-index:25;display:flex;align-items:center;gap:8px;background:var(--acc);color:#02222e;border-radius:999px;padding:13px 18px 13px 15px;box-shadow:0 8px 22px rgba(0,180,216,0.4);">
+    <svg width="16" height="16" viewBox="0 0 16 16"><line x1="8" y1="2.5" x2="8" y2="13.5" stroke="#02222e" stroke-width="2.4" stroke-linecap="round"></line><line x1="2.5" y1="8" x2="13.5" y2="8" stroke="#02222e" stroke-width="2.4" stroke-linecap="round"></line></svg>
+    <div style="font:700 13.5px 'Archivo',sans-serif;">Log a Dive</div>
+  </div>
+  <div style="position:absolute;left:0;right:0;bottom:0;z-index:20;background:var(--sheet);border-radius:20px 20px 0 0;box-shadow:0 -12px 34px var(--shadow);padding:9px 14px 90px;display:flex;flex-direction:column;gap:10px;">
+    <div style="width:36px;height:4px;border-radius:2px;background:var(--line);margin:0 auto;"></div>
+    <div style="display:flex;align-items:baseline;justify-content:space-between;">
+      <div style="font:700 14.5px 'Archivo',sans-serif;color:var(--tx);">Red Sea · 247 sites</div>
+      <div style="font:600 10.5px 'IBM Plex Mono',monospace;color:var(--tx3);letter-spacing:0.06em;">SORT: RATING ▾</div>
+    </div>
+    <sc-for list="{{ sites }}" as="s" hint-placeholder-count="3">
+      <div style="display:flex;gap:11px;padding:9px;border:1px solid var(--line);border-radius:14px;background:var(--card);align-items:center;">
+        <div style="width:60px;height:60px;flex:none;"><image-slot id="thumb-{{ s.img }}" shape="rounded" radius="10" src="{{ s.src }}" placeholder="photo"></image-slot></div>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;">
+          <div style="display:flex;align-items:center;gap:7px;">
+            <div style="font:700 14px 'Archivo',sans-serif;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ s.name }}</div>
+            <div style="flex:none;font:600 8.5px 'IBM Plex Mono',monospace;color:var(--acc);border:1px solid var(--acc);border-radius:5px;padding:2px 5px;letter-spacing:0.08em;">{{ s.type }}</div>
+          </div>
+          <div style="font:500 10.5px 'Archivo',sans-serif;color:var(--tx3);">{{ s.loc }}</div>
+          <div style="display:flex;gap:9px;align-items:center;font:600 10.5px 'IBM Plex Mono',monospace;">
+            <span style="color:var(--tx2);">{{ s.depth }}</span>
+            <span style="letter-spacing:2px;font-size:9px;"><span style="color:var(--acc);">{{ s.vizOn }}</span><span style="color:var(--line);">{{ s.vizOff }}</span></span>
+          </div>
+        </div>
+        <div style="flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
+          <div style="font:700 12.5px 'Archivo',sans-serif;color:var(--tx);">★ {{ s.rating }}</div>
+          <div style="font:600 9px 'IBM Plex Mono',monospace;color:{{ s.curCol }};letter-spacing:0.06em;">{{ s.cur }}</div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+  <div style="position:absolute;left:0;right:0;bottom:0;z-index:40;display:flex;padding:9px 6px 25px;background:var(--sheet);border-top:1px solid var(--line);">
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;">
+      <svg width="22" height="22" viewBox="0 0 22 22"><rect x="4.5" y="4.5" width="13" height="13" rx="2.5" transform="rotate(45 11 11)" stroke="var(--acc)" stroke-width="1.8" fill="none"></rect></svg>
+      <div style="font:600 9.5px 'Archivo',sans-serif;color:var(--acc);">Map</div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;">
+      <svg width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="11" r="8" stroke="var(--tx3)" stroke-width="1.8" fill="none"></circle><polygon points="11,6.6 13.4,11 11,15.4 8.6,11" fill="var(--tx3)"></polygon></svg>
+      <div style="font:600 9.5px 'Archivo',sans-serif;color:var(--tx3);">Discover</div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;">
+      <svg width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="11" r="8" stroke="var(--tx3)" stroke-width="1.8" fill="none"></circle><line x1="11" y1="7.5" x2="11" y2="14.5" stroke="var(--tx3)" stroke-width="1.8" stroke-linecap="round"></line><line x1="7.5" y1="11" x2="14.5" y2="11" stroke="var(--tx3)" stroke-width="1.8" stroke-linecap="round"></line></svg>
+      <div style="font:600 9.5px 'Archivo',sans-serif;color:var(--tx3);">Log Dive</div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;">
+      <svg width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="7.5" r="3.4" stroke="var(--tx3)" stroke-width="1.8" fill="none"></circle><path d="M4.5 18.5c0-3.6 2.9-5.6 6.5-5.6s6.5 2 6.5 5.6" stroke="var(--tx3)" stroke-width="1.8" fill="none" stroke-linecap="round"></path></svg>
+      <div style="font:600 9.5px 'Archivo',sans-serif;color:var(--tx3);">Profile</div>
+    </div>
+  </div>
+</div>
+</x-import>
+</div>
+
+<!-- ══════════ SCREEN 2 · SITE DETAIL ══════════ -->
+<div data-screen-label="02 Site Detail" style="display:flex;flex-direction:column;{{ tv }}">
+<div style="font:600 11px 'IBM Plex Mono',monospace;color:#638aa3;letter-spacing:0.14em;margin:0 0 12px 6px;">02 · DIVE SITE DETAIL</div>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ mapFrameDark }}" hint-size="402px,874px">
+<div style="position:relative;width:100%;height:100%;min-height:820px;background:var(--bg);overflow:hidden;">
+  <div data-scroll="1" style="position:absolute;inset:0;overflow-y:auto;padding-bottom:130px;">
+    <div style="position:relative;height:302px;background:#062038;">
+      <image-slot id="hero-thistlegorm" shape="rect" src="images/hero.png" placeholder="hero photo — SS Thistlegorm deck gun"></image-slot>
+      <div style="position:absolute;inset:0;background:linear-gradient(180deg, rgba(3,10,18,0.6) 0%, rgba(3,10,18,0) 32%, rgba(3,10,18,0) 52%, rgba(4,18,31,0.92) 100%);pointer-events:none;"></div>
+      <div style="position:absolute;top:58px;left:14px;right:14px;display:flex;justify-content:space-between;pointer-events:none;">
+        <div style="pointer-events:auto;width:38px;height:38px;border-radius:50%;background:rgba(4,18,31,0.7);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;"><svg width="11" height="18" viewBox="0 0 11 18"><path d="M9 2L2.5 9L9 16" stroke="#eaf6fd" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+        <div style="pointer-events:auto;display:flex;gap:8px;">
+          <div style="width:38px;height:38px;border-radius:50%;background:rgba(4,18,31,0.7);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;"><svg width="14" height="17" viewBox="0 0 14 17"><path d="M2 2h10v13l-5-3.4L2 15V2z" stroke="#eaf6fd" stroke-width="1.8" fill="none" stroke-linejoin="round"></path></svg></div>
+        </div>
+      </div>
+      <div style="position:absolute;left:16px;right:16px;bottom:13px;display:flex;flex-direction:column;gap:5px;pointer-events:none;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="font:700 8.5px 'IBM Plex Mono',monospace;color:#04121f;background:#00b4d8;border-radius:5px;padding:3px 6px;letter-spacing:0.1em;">WRECK</div>
+          <div style="font:600 11.5px 'Archivo',sans-serif;color:#cde7f5;">★ 4.9 · 2,340 logged dives</div>
+        </div>
+        <div style="font:800 27px 'Archivo',sans-serif;color:#ffffff;letter-spacing:-0.01em;">SS Thistlegorm</div>
+        <div style="font:500 12px 'Archivo',sans-serif;color:#9fc3da;">Ras Muhammad · Red Sea, Egypt</div>
+      </div>
+    </div>
+    <div data-scroll="1" style="display:flex;gap:8px;overflow-x:auto;padding:13px 14px 5px;">
+      <sc-for list="{{ specs }}" as="sp" hint-placeholder-count="5">
+        <div style="flex:none;min-width:88px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:3px;">
+          <div style="font:600 12px 'IBM Plex Mono',monospace;color:var(--acc);">{{ sp.i }}</div>
+          <div style="font:700 15px 'IBM Plex Mono',monospace;color:var(--tx);white-space:nowrap;">{{ sp.v }}</div>
+          <div style="font:600 8.5px 'Archivo',sans-serif;color:var(--tx3);letter-spacing:0.09em;text-transform:uppercase;">{{ sp.l }}</div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="padding:2px 16px 0;font:500 9.5px 'IBM Plex Mono',monospace;color:var(--tx3);letter-spacing:0.05em;">CONDITIONS UPDATED 3 H AGO · 12 REPORTS THIS WEEK</div>
+    <div data-scroll="1" style="display:flex;overflow-x:auto;border-bottom:1px solid var(--line);margin-top:8px;padding:0 8px;">
+      <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="5">
+        <div onClick="{{ t.go }}" style="flex:none;padding:11px 12px;font:600 12.5px 'Archivo',sans-serif;color:{{ t.col }};border-bottom:2px solid {{ t.bd }};cursor:pointer;white-space:nowrap;">{{ t.n }}</div>
+      </sc-for>
+    </div>
+    <sc-if value="{{ tabOverview }}" hint-placeholder-val="{{ true }}">
+      <div style="padding:16px;display:flex;flex-direction:column;gap:16px;animation:dmFade 0.25s ease;">
+        <div style="font:400 13px 'Archivo',sans-serif;color:var(--tx2);line-height:1.65;">British armed freighter sunk by German bombers in 1941, resting upright at 30&nbsp;m. The cargo holds are still packed with BSA motorcycles, Bedford trucks and Wellington boots. Penetration through holds 1 and 2 is straightforward with good light; the stern gun is the classic shot.</div>
+        <div style="background:var(--chip);border:1px solid rgba(0,180,216,0.4);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="font:700 10px 'IBM Plex Mono',monospace;color:var(--acc);letter-spacing:0.14em;">◆ INSIDER NOTES</div>
+            <div style="font:500 10px 'Archivo',sans-serif;color:var(--tx3);">from 12 technical divers</div>
+          </div>
+          <div style="font:500 13px 'Archivo',sans-serif;color:var(--tx);line-height:1.6;">The two locomotives were blown clear of the deck and sit in the sand at 33&nbsp;m off the port side — most guides skip them. Current builds hard after 10:00: hit the propeller and rudder first, then work forward with it on your tail.</div>
+          <div style="font:500 10px 'IBM Plex Mono',monospace;color:var(--tx3);">— @deep_sinai · TX 21/35 · JUN 2026</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:9px;">
+          <div style="font:600 10px 'IBM Plex Mono',monospace;color:var(--tx3);letter-spacing:0.12em;">MARINE LIFE · SPOTTED THIS MONTH</div>
+          <div style="display:flex;flex-wrap:wrap;gap:7px;">
+            <sc-for list="{{ marine }}" as="m" hint-placeholder-count="5">
+              <div style="display:flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 11px;">
+                <div style="width:7px;height:7px;border-radius:50%;background:{{ m.c }};"></div>
+                <div style="font:600 11.5px 'Archivo',sans-serif;color:var(--tx2);">{{ m.n }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ tabConditions }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:16px;display:flex;flex-direction:column;gap:14px;animation:dmFade 0.25s ease;">
+        <div style="display:flex;gap:10px;">
+          <div style="flex:1;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:3px;">
+            <div style="font:600 9px 'IBM Plex Mono',monospace;color:var(--tx3);letter-spacing:0.12em;">VISIBILITY</div>
+            <div style="font:700 24px 'IBM Plex Mono',monospace;color:var(--tx);">{{ condViz }}</div>
+            <div style="font:600 10.5px 'Archivo',sans-serif;color:var(--ok);">▲ improving since Monday</div>
+          </div>
+          <div style="flex:1;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:3px;">
+            <div style="font:600 9px 'IBM Plex Mono',monospace;color:var(--tx3);letter-spacing:0.12em;">CURRENT</div>
+            <div style="font:700 24px 'IBM Plex Mono',monospace;color:var(--tx);">››</div>
+            <div style="font:600 10.5px 'Archivo',sans-serif;color:var(--tx2);">Mild — builds by noon</div>
+          </div>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px;">
+          <div style="font:600 9px 'IBM Plex Mono',monospace;color:var(--tx3);letter-spacing:0.12em;">WATER TEMP BY DEPTH</div>
+          <sc-for list="{{ temps }}" as="tr" hint-placeholder-count="3">
+            <div style="display:flex;justify-content:space-between;font:600 12.5px 'IBM Plex Mono',monospace;border-bottom:1px solid var(--line);padding:6px 0;">
+              <span style="color:var(--tx3);">{{ tr.d }}</span><span style="color:var(--tx);">{{ tr.t }}</span>
+            </div>
+          </sc-for>
+          <div style="font:500 10.5px 'Archivo',sans-serif;color:var(--tx3);">Mild thermocline at ~22&nbsp;m — bring a hood in winter.</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="font:600 10px 'IBM Plex Mono',monospace;color:var(--tx3);letter-spacing:0.12em;">RECENT REPORTS</div>
+          <sc-for list="{{ reports }}" as="r" hint-placeholder-count="2">
+            <div style="display:flex;gap:10px;align-items:center;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:10px 12px;">
+              <div style="width:8px;height:8px;border-radius:50%;background:var(--acc);flex:none;"></div>
+              <div style="font:500 11.5px 'Archivo',sans-serif;color:var(--tx2);">{{ r.txt }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="border:1.5px solid var(--acc);border-radius:13px;padding:12px;text-align:center;font:700 13px 'Archivo',sans-serif;color:var(--acc);">Report conditions</div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ tabPhotos }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:16px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;animation:dmFade 0.25s ease;">
+        <div style="height:132px;min-width:0;overflow:hidden;border-radius:12px;"><image-slot id="ph-tg-1" shape="rounded" radius="12" src="images/p1.png" placeholder="stern gun"></image-slot></div>
+        <div style="height:132px;min-width:0;overflow:hidden;border-radius:12px;"><image-slot id="ph-tg-2" shape="rounded" radius="12" src="images/p2.png" placeholder="hold no.2 — motorcycles"></image-slot></div>
+        <div style="height:132px;min-width:0;overflow:hidden;border-radius:12px;"><image-slot id="ph-tg-3" shape="rounded" radius="12" src="images/p3.png" placeholder="batfish school"></image-slot></div>
+        <div style="height:132px;min-width:0;overflow:hidden;border-radius:12px;"><image-slot id="ph-tg-4" shape="rounded" radius="12" src="images/p4.png" placeholder="bow at dawn"></image-slot></div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ tabOperators }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:16px;display:flex;flex-direction:column;gap:10px;animation:dmFade 0.25s ease;">
+        <div style="font:500 10.5px 'Archivo',sans-serif;color:var(--tx3);">Vetted in person by DiveMap technical advisors.</div>
+        <sc-for list="{{ operators }}" as="o" hint-placeholder-count="2">
+          <div style="border:1px solid var(--line);background:var(--card);border-radius:14px;padding:13px 14px;display:flex;flex-direction:column;gap:6px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div style="font:700 13.5px 'Archivo',sans-serif;color:var(--tx);">{{ o.n }}</div>
+              <sc-if value="{{ o.tech }}" hint-placeholder-val="{{ true }}">
+                <div style="font:700 8.5px 'IBM Plex Mono',monospace;color:var(--acc);border:1px solid var(--acc);border-radius:5px;padding:3px 6px;letter-spacing:0.1em;">TECH VETTED ✓</div>
+              </sc-if>
+            </div>
+            <div style="font:500 11px 'Archivo',sans-serif;color:var(--tx3);">{{ o.base }}</div>
+            <div style="font:500 10.5px 'IBM Plex Mono',monospace;color:var(--tx2);">{{ o.kit }}</div>
+            <div style="font:600 11px 'Archivo',sans-serif;color:var(--tx2);">★ {{ o.r }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+    <sc-if value="{{ tabTech }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:16px;display:flex;flex-direction:column;gap:12px;animation:dmFade 0.25s ease;">
+        <div style="background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:7px;">
+          <div style="font:600 9px 'IBM Plex Mono',monospace;color:var(--tx3);letter-spacing:0.12em;">MOD QUICK TABLE · ppO₂ 1.4</div>
+          <sc-for list="{{ mods }}" as="md" hint-placeholder-count="3">
+            <div style="display:flex;justify-content:space-between;font:600 12.5px 'IBM Plex Mono',monospace;border-bottom:1px solid var(--line);padding:6px 0;">
+              <span style="color:var(--tx2);">{{ md.g }}</span><span style="color:var(--tx);">{{ md.m }}</span>
+            </div>
+          </sc-for>
+          <div style="font:500 10.5px 'Archivo',sans-serif;color:var(--tx3);">Deck at 30&nbsp;m, holds to 32&nbsp;m. EAN30 keeps you inside NDL for one full circuit.</div>
+        </div>
+        <div style="background:var(--chip);border:1px solid rgba(0,180,216,0.4);border-radius:13px;padding:13px;text-align:center;font:700 13px 'Archivo',sans-serif;color:var(--acc);">Open Tech Planner →</div>
+      </div>
+    </sc-if>
+  </div>
+  <div style="position:absolute;left:0;right:0;bottom:0;z-index:30;padding:14px 16px 30px;background:linear-gradient(180deg, transparent 0%, var(--bg) 42%);">
+    <div style="background:var(--acc);color:#02222e;font:700 15px 'Archivo',sans-serif;padding:15px;border-radius:14px;text-align:center;box-shadow:0 6px 18px rgba(0,180,216,0.35);">Plan This Dive</div>
+  </div>
+</div>
+</x-import>
+</div>
+
+<!-- ══════════ SCREEN 3 · TECH PLANNER ══════════ -->
+<div data-screen-label="03 Tech Dive Planner" style="display:flex;flex-direction:column;{{ tv }}">
+<div style="font:600 11px 'IBM Plex Mono',monospace;color:#638aa3;letter-spacing:0.14em;margin:0 0 12px 6px;">03 · TECH DIVE PLANNER — LIVE BÜHLMANN ZHL-16C</div>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ isDark }}" hint-size="402px,874px">
+<div style="position:relative;width:100%;height:100%;min-height:820px;background:var(--bg);display:flex;flex-direction:column;padding-top:60px;">
+  <div style="display:flex;align-items:center;gap:11px;padding:6px 16px 10px;">
+    <svg width="10" height="17" viewBox="0 0 10 17"><path d="M8.5 1.5L2 8.5l6.5 7" stroke="var(--tx2)" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+    <div style="flex:1;display:flex;flex-direction:column;">
+      <div style="font:800 17px 'Archivo',sans-serif;color:var(--tx);">Tech Planner</div>
+      <div style="font:500 10.5px 'Archivo',sans-serif;color:var(--tx3);">Blue Hole · Dahab — plan #4</div>
+    </div>
+    <div style="font:700 9px 'IBM Plex Mono',monospace;color:var(--acc);border:1px solid var(--acc);border-radius:6px;padding:4px 7px;letter-spacing:0.1em;">OC · ZHL-16C</div>
+  </div>
+  <div data-scroll="1" style="flex:1;overflow-y:auto;padding:4px 14px 64px;display:flex;flex-direction:column;gap:11px;">
+    <div style="background:var(--card);border:1px solid var(--line);border-radius:16px;padding:13px;display:flex;flex-direction:column;gap:10px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;">
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <div style="font:600 9px 'IBM Plex Mono',monospace;color:var(--tx3);letter-spacing:0.1em;">BOTTOM DEPTH ({{ uD }})</div>
+          <input type="number" value="{{ depth }}" onChange="{{ setDepth }}" style="background:var(--inputbg);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font:600 18px 'IBM Plex Mono',monospace;color:var(--tx);width:100%;">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <div style="font:600 9px 'IBM Plex Mono',monospace;color:var(--tx3);letter-spacing:0.1em;">BOTTOM TIME (MIN)</div>
+          <input type="number" value="{{ time }}" onChange="{{ setTime }}" style="background:var(--inputbg);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font:600 18px 'IBM Plex Mono',monospace;color:var(--tx);width:100%;">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <div style="font:600 9px 'IBM Plex Mono',monospace;color:var(--tx3);letter-spacing:0.1em;">O₂ (%)</div>
+          <input type="number" value="{{ o2 }}" onChange="{{ setO2 }}" style="background:var(--inputbg);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font:600 18px 'IBM Plex Mono',monospace;color:var(--tx);width:100%;">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <div style="font:600 9px 'IBM Plex Mono',monospace;color:var(--tx3);letter-spacing:0.1em;">HELIUM (%)</div>
+          <input type="number" value="{{ he }}" onChange="{{ setHe }}" style="background:var(--inputbg);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font:600 18px 'IBM Plex Mono',monospace;color:var(--tx);width:100%;">
+        </div>
+      </div>
+      <div style="font:600 10.5px 'IBM Plex Mono',monospace;color:var(--acc);letter-spacing:0.04em;">{{ mixLine }}</div>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--line);border-radius:16px;padding:13px;display:flex;flex-direction:column;gap:2px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="font:600 9px 'IBM Plex Mono',monospace;color:var(--tx3);letter-spacing:0.1em;">GRADIENT FACTORS</div>
+        <div style="font:700 13px 'IBM Plex Mono',monospace;color:var(--acc);">{{ gfLo }} / {{ gfHi }}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="font:600 9px 'IBM Plex Mono',monospace;color:var(--tx3);width:16px;">LO</div>
+        <input type="range" min="10" max="100" value="{{ gfLo }}" onChange="{{ setGfLo }}" style="flex:1;">
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="font:600 9px 'IBM Plex Mono',monospace;color:var(--tx3);width:16px;">HI</div>
+        <input type="range" min="10" max="100" value="{{ gfHi }}" onChange="{{ setGfHi }}" style="flex:1;">
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
+      <div style="font:600 9px 'IBM Plex Mono',monospace;color:var(--tx3);letter-spacing:0.1em;">DECO GASES</div>
+      <sc-for list="{{ gasChips }}" as="g" hint-placeholder-count="1">
+        <div style="display:flex;align-items:center;gap:7px;background:var(--chip);border:1px solid rgba(0,180,216,0.4);border-radius:999px;padding:6px 11px;">
+          <div style="font:600 10.5px 'IBM Plex Mono',monospace;color:var(--acc);">{{ g.label }}</div>
+          <div onClick="{{ g.rm }}" style="font:600 12px 'Archivo',sans-serif;color:var(--tx3);cursor:pointer;line-height:1;">×</div>
+        </div>
+      </sc-for>
+      <sc-if value="{{ canAddGas }}" hint-placeholder-val="{{ true }}">
+        <div onClick="{{ addGas }}" style="font:600 10.5px 'IBM Plex Mono',monospace;color:var(--tx2);border:1px dashed var(--tx3);border-radius:999px;padding:6px 11px;cursor:pointer;">+ {{ nextGas }}</div>
+      </sc-if>
+    </div>
+    <sc-if value="{{ warnText }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;gap:10px;align-items:center;background:{{ warnBg }};border:1px solid {{ warnBd }};border-radius:12px;padding:10px 12px;">
+        <div style="width:8px;height:8px;border-radius:50%;background:{{ warnDot }};box-shadow:0 0 9px {{ warnDot }};flex:none;"></div>
+        <div style="font:600 11px 'IBM Plex Mono',monospace;color:{{ warnCol }};letter-spacing:0.02em;">{{ warnText }}</div>
+      </div>
+    </sc-if>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+      <div style="background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 8px;display:flex;flex-direction:column;gap:2px;align-items:center;">
+        <div style="font:700 16px 'IBM Plex Mono',monospace;color:var(--tx);">{{ runtime }}</div>
+        <div style="font:600 8px 'IBM Plex Mono',monospace;color:var(--tx3);letter-spacing:0.1em;">RUNTIME</div>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 8px;display:flex;flex-direction:column;gap:2px;align-items:center;">
+        <div style="font:700 16px 'IBM Plex Mono',monospace;color:var(--tx);">{{ tts }}</div>
+        <div style="font:600 8px 'IBM Plex Mono',monospace;color:var(--tx3);letter-spacing:0.1em;">TTS</div>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 8px;display:flex;flex-direction:column;gap:2px;align-items:center;">
+        <div style="font:700 16px 'IBM Plex Mono',monospace;color:{{ cnsCol }};">{{ cns }}</div>
+        <div style="font:600 8px 'IBM Plex Mono',monospace;color:var(--tx3);letter-spacing:0.1em;">CNS</div>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 8px;display:flex;flex-direction:column;gap:2px;align-items:center;">
+        <div style="font:700 16px 'IBM Plex Mono',monospace;color:var(--tx);">{{ otu }}</div>
+        <div style="font:600 8px 'IBM Plex Mono',monospace;color:var(--tx3);letter-spacing:0.1em;">OTU</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:stretch;">
+      <div style="flex:1;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:13px;display:flex;flex-direction:column;gap:2px;min-width:0;">
+        <div style="display:flex;justify-content:space-between;font:600 8.5px 'IBM Plex Mono',monospace;color:var(--tx3);letter-spacing:0.1em;padding-bottom:7px;border-bottom:1px solid var(--line);">
+          <span>STOP</span><span>MIN</span><span>GAS</span>
+        </div>
+        <sc-if value="{{ noDeco }}" hint-placeholder-val="{{ false }}">
+          <div style="font:500 11.5px 'Archivo',sans-serif;color:var(--tx2);padding:14px 0;line-height:1.5;">No required stops — within NDL. Ascend at 9&nbsp;{{ uD }}/min with a 3&nbsp;min safety stop.</div>
+        </sc-if>
+        <sc-for list="{{ stops }}" as="st" hint-placeholder-count="4">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;font:600 12.5px 'IBM Plex Mono',monospace;padding:7px 0;border-bottom:1px solid var(--line);">
+            <span style="color:var(--tx);">{{ st.d }}</span>
+            <span style="color:var(--acc);">{{ st.t }}</span>
+            <span style="color:var(--tx3);font-size:10px;">{{ st.gas }}</span>
+          </div>
+        </sc-for>
+        <div style="font:500 9.5px 'IBM Plex Mono',monospace;color:var(--tx3);padding-top:9px;">DESC 18 · ASC 9 {{ uD }}/MIN</div>
+      </div>
+      <div style="flex:none;width:152px;background:var(--inputbg);border:1px solid var(--line);border-radius:16px;padding:8px 2px 6px;display:flex;flex-direction:column;align-items:center;">
+        <svg width="148" height="308" viewBox="0 0 148 308">
+          <sc-for list="{{ glines }}" as="gl" hint-placeholder-count="4">
+            <line x1="10" x2="118" y1="{{ gl.y }}" y2="{{ gl.y }}" stroke="var(--line)" stroke-width="1"></line>
+            <text x="122" y="{{ gl.ty }}" fill="var(--tx3)" font-size="8" font-family="IBM Plex Mono, monospace">{{ gl.label }}</text>
+          </sc-for>
+          <path d="{{ ppath }}" stroke="var(--acc)" stroke-width="2.2" fill="none" stroke-linejoin="round" stroke-linecap="round" style="stroke-dasharray:1100;stroke-dashoffset:1100;animation:dmDraw 1.8s ease-out 0.3s forwards;"></path>
+          <sc-for list="{{ pdots }}" as="pd" hint-placeholder-count="4">
+            <circle cx="{{ pd.x }}" cy="{{ pd.y }}" r="2.6" fill="var(--acc)"></circle>
+          </sc-for>
+        </svg>
+        <div style="font:500 8.5px 'IBM Plex Mono',monospace;color:var(--tx3);letter-spacing:0.08em;">0 → {{ runtime }} · DEPTH {{ uD }}</div>
+      </div>
+    </div>
+    <div style="font:500 10px 'Archivo',sans-serif;color:var(--tx3);text-align:center;">Planning aid only — always dive your computer. Warnings fire a haptic pulse.</div>
+  </div>
+</div>
+</x-import>
+</div>
+
+<!-- ══════════ SCREEN 4 · REPORT CONDITIONS ══════════ -->
+<div data-screen-label="04 Report Conditions" style="display:flex;flex-direction:column;{{ tv }}">
+<div style="font:600 11px 'IBM Plex Mono',monospace;color:#638aa3;letter-spacing:0.14em;margin:0 0 12px 6px;">04 · REPORT CONDITIONS — 4-STEP FLOW</div>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ isDark }}" hint-size="402px,874px">
+<div style="position:relative;width:100%;height:100%;min-height:820px;background:var(--bg);display:flex;flex-direction:column;padding-top:60px;">
+  <div style="display:flex;align-items:center;padding:6px 16px 4px;">
+    <div onClick="{{ resetFlow }}" style="width:38px;height:38px;border-radius:50%;background:var(--card);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;cursor:pointer;">
+      <svg width="13" height="13" viewBox="0 0 13 13"><line x1="2" y1="2" x2="11" y2="11" stroke="var(--tx2)" stroke-width="2" stroke-linecap="round"></line><line x1="11" y1="2" x2="2" y2="11" stroke="var(--tx2)" stroke-width="2" stroke-linecap="round"></line></svg>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;">
+      <div style="font:700 15px 'Archivo',sans-serif;color:var(--tx);">Report conditions</div>
+      <div style="font:500 10.5px 'Archivo',sans-serif;color:var(--tx3);">Blue Hole · Dahab</div>
+    </div>
+    <div style="width:38px;"></div>
+  </div>
+  <sc-if value="{{ notDone }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;justify-content:center;gap:7px;padding:14px 0 6px;">
+      <sc-for list="{{ dots }}" as="d" hint-placeholder-count="4">
+        <div style="width:{{ d.w }};height:8px;border-radius:4px;background:{{ d.bg }};transition:all 0.25s ease;"></div>
+      </sc-for>
+    </div>
+  </sc-if>
+  <sc-if value="{{ step1 }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:1;padding:22px 20px;display:flex;flex-direction:column;gap:18px;animation:dmFade 0.25s ease;">
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div style="font:800 23px 'Archivo',sans-serif;color:var(--tx);">How was the viz?</div>
+        <div style="font:500 12.5px 'Archivo',sans-serif;color:var(--tx2);">Horizontal distance you could see at depth.</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+        <div style="font:700 56px 'IBM Plex Mono',monospace;color:var(--acc);line-height:1;">{{ vizS }}</div>
+        <div style="font:600 12px 'Archivo',sans-serif;color:var(--tx2);">{{ vizWord }}</div>
+      </div>
+      <div style="position:relative;height:46px;border-radius:12px;background:linear-gradient(90deg,#0b1d2a 0%, #0e3a54 32%, #1780ab 65%, #7fd8ef 100%);border:1px solid var(--line);overflow:hidden;">
+        <div style="position:absolute;top:0;bottom:0;left:{{ vizPct }};width:3px;background:#ffffff;box-shadow:0 0 10px rgba(255,255,255,0.8);transform:translateX(-50%);"></div>
+      </div>
+      <input type="range" min="0" max="30" step="1" value="{{ viz }}" onChange="{{ setViz }}" style="width:100%;">
+      <div style="display:flex;justify-content:space-between;font:600 9.5px 'IBM Plex Mono',monospace;color:var(--tx3);">
+        <span>{{ vizLo }}</span><span>{{ vizMid }}</span><span>{{ vizHi }}+</span>
+      </div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ step2 }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;padding:22px 20px;display:flex;flex-direction:column;gap:16px;animation:dmFade 0.25s ease;">
+      <div style="font:800 23px 'Archivo',sans-serif;color:var(--tx);">Current?</div>
+      <div style="display:flex;flex-direction:column;gap:9px;">
+        <sc-for list="{{ curs }}" as="c" hint-placeholder-count="5">
+          <div onClick="{{ c.pick }}" style="display:flex;align-items:center;gap:12px;padding:15px 14px;border-radius:14px;border:1.5px solid {{ c.bd }};background:{{ c.bg }};cursor:pointer;">
+            <div style="width:44px;font:700 15px 'IBM Plex Mono',monospace;color:var(--acc);letter-spacing:1px;">{{ c.i }}</div>
+            <div style="display:flex;flex-direction:column;gap:1px;">
+              <div style="font:700 15px 'Archivo',sans-serif;color:var(--tx);">{{ c.n }}</div>
+              <div style="font:500 11px 'Archivo',sans-serif;color:var(--tx3);">{{ c.d }}</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ step3 }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;padding:22px 20px;display:flex;flex-direction:column;gap:18px;animation:dmFade 0.25s ease;">
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div style="font:800 23px 'Archivo',sans-serif;color:var(--tx);">Water temp?</div>
+        <div style="font:500 12.5px 'Archivo',sans-serif;color:var(--tx2);">In {{ uT }}, at the surface and at depth.</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;">
+          <div style="flex:1;font:600 10px 'IBM Plex Mono',monospace;color:var(--tx3);letter-spacing:0.12em;">SURFACE</div>
+          <input type="number" value="{{ ts }}" onChange="{{ setTs }}" style="width:96px;background:var(--inputbg);border:1px solid var(--line);border-radius:12px;padding:12px;font:700 24px 'IBM Plex Mono',monospace;color:var(--tx);text-align:center;">
+          <div style="font:600 14px 'IBM Plex Mono',monospace;color:var(--tx3);">{{ uT }}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;">
+          <div style="flex:1;font:600 10px 'IBM Plex Mono',monospace;color:var(--tx3);letter-spacing:0.12em;">AT DEPTH</div>
+          <input type="number" value="{{ tb }}" onChange="{{ setTb }}" style="width:96px;background:var(--inputbg);border:1px solid var(--line);border-radius:12px;padding:12px;font:700 24px 'IBM Plex Mono',monospace;color:var(--tx);text-align:center;">
+          <div style="font:600 14px 'IBM Plex Mono',monospace;color:var(--tx3);">{{ uT }}</div>
+        </div>
+      </div>
+      <sc-if value="{{ thermocline }}" hint-placeholder-val="{{ false }}">
+        <div style="font:600 11px 'IBM Plex Mono',monospace;color:var(--warn);">Δ {{ tDelta }} — thermocline likely, we'll flag it on the site.</div>
+      </sc-if>
+    </div>
+  </sc-if>
+  <sc-if value="{{ step4 }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;padding:22px 20px;display:flex;flex-direction:column;gap:16px;animation:dmFade 0.25s ease;">
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div style="font:800 23px 'Archivo',sans-serif;color:var(--tx);">Anything else?</div>
+        <div style="font:500 12.5px 'Archivo',sans-serif;color:var(--tx2);">Optional — surge, entry conditions, what you saw.</div>
+      </div>
+      <textarea value="{{ note }}" onChange="{{ setNote }}" placeholder="Current direction, surge at entry, what you saw…" style="height:128px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px;font:500 13.5px 'Archivo',sans-serif;color:var(--tx);resize:none;width:100%;"></textarea>
+      <div style="display:flex;gap:12px;align-items:center;">
+        <div style="width:84px;height:84px;flex:none;"><image-slot id="report-photo" shape="rounded" radius="14" placeholder="add photo"></image-slot></div>
+        <div style="font:500 11.5px 'Archivo',sans-serif;color:var(--tx3);line-height:1.5;">Optional photo — surface shots help other divers plan entries.</div>
+      </div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ done }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;padding:40px 28px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;animation:dmFade 0.3s ease;">
+      <div style="width:86px;height:86px;border-radius:50%;border:3px solid var(--ok);display:flex;align-items:center;justify-content:center;">
+        <svg width="34" height="26" viewBox="0 0 34 26"><path d="M3 13.5L12.5 23L31 3" stroke="var(--ok)" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      </div>
+      <div style="font:800 23px 'Archivo',sans-serif;color:var(--tx);text-align:center;">Report submitted</div>
+      <div style="font:500 13px 'Archivo',sans-serif;color:var(--tx2);text-align:center;line-height:1.6;max-width:270px;">Help other divers 🤿 — your viz, current and temp go live on Blue Hole in about 2 minutes.</div>
+      <div onClick="{{ resetFlow }}" style="margin-top:8px;border:1.5px solid var(--line);border-radius:13px;padding:13px 34px;font:700 13.5px 'Archivo',sans-serif;color:var(--tx2);cursor:pointer;">Done</div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ notDone }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;gap:10px;padding:14px 20px 46px;">
+      <sc-if value="{{ showBack }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ backStep }}" style="width:92px;border:1.5px solid var(--line);border-radius:14px;padding:15px 0;text-align:center;font:700 14px 'Archivo',sans-serif;color:var(--tx2);cursor:pointer;">Back</div>
+      </sc-if>
+      <div onClick="{{ nextStep }}" style="flex:1;background:var(--acc);border-radius:14px;padding:15px 0;text-align:center;font:700 14.5px 'Archivo',sans-serif;color:#02222e;cursor:pointer;box-shadow:0 6px 16px rgba(0,180,216,0.3);">{{ ctaLabel }}</div>
+    </div>
+  </sc-if>
+</div>
+</x-import>
+</div>
+
+<!-- ══════════ SCREEN 5 · PROFILE / LOGBOOK ══════════ -->
+<div data-screen-label="05 Diver Profile" style="display:flex;flex-direction:column;{{ tv }}">
+<div style="font:600 11px 'IBM Plex Mono',monospace;color:#638aa3;letter-spacing:0.14em;margin:0 0 12px 6px;">05 · DIVER PROFILE / LOGBOOK</div>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ isDark }}" hint-size="402px,874px">
+<div style="position:relative;width:100%;height:100%;min-height:820px;background:var(--bg);overflow:hidden;">
+  <div data-scroll="1" style="position:absolute;inset:0;overflow-y:auto;padding:64px 0 110px;">
+    <div style="padding:8px 16px 0;display:flex;align-items:center;gap:14px;">
+      <div style="width:64px;height:64px;flex:none;"><image-slot id="avatar-marta" shape="circle" src="images/avatar.png" placeholder="avatar"></image-slot></div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:2px;">
+        <div style="font:800 19px 'Archivo',sans-serif;color:var(--tx);">Marta Keller</div>
+        <div style="font:500 11.5px 'Archivo',sans-serif;color:var(--tx3);">Advanced Trimix · Dahab, Egypt</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:3px;">
+          <div style="width:6px;height:6px;border-radius:50%;background:var(--ok);"></div>
+          <div style="font:600 9px 'IBM Plex Mono',monospace;color:var(--tx3);letter-spacing:0.08em;">DIVE COMPUTER SYNCED · 2 H AGO</div>
+        </div>
+      </div>
+      <div style="font:700 9.5px 'IBM Plex Mono',monospace;color:var(--tx2);border:1px solid var(--line);border-radius:999px;padding:6px 11px;letter-spacing:0.1em;">EDIT</div>
+    </div>
+    <div style="margin:16px 16px 0;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 6px;display:grid;grid-template-columns:repeat(4,1fr);">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+        <div style="font:700 18px 'IBM Plex Mono',monospace;color:var(--tx);">342</div>
+        <div style="font:600 8px 'IBM Plex Mono',monospace;color:var(--tx3);letter-spacing:0.08em;">DIVES</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px;border-left:1px solid var(--line);">
+        <div style="font:700 18px 'IBM Plex Mono',monospace;color:var(--tx);">{{ maxDepthS }}</div>
+        <div style="font:600 8px 'IBM Plex Mono',monospace;color:var(--tx3);letter-spacing:0.08em;">MAX DEPTH</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px;border-left:1px solid var(--line);">
+        <div style="font:700 18px 'IBM Plex Mono',monospace;color:var(--tx);">289h</div>
+        <div style="font:600 8px 'IBM Plex Mono',monospace;color:var(--tx3);letter-spacing:0.08em;">UNDERWATER</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px;border-left:1px solid var(--line);">
+        <div style="font:700 18px 'IBM Plex Mono',monospace;color:var(--tx);">23</div>
+        <div style="font:600 8px 'IBM Plex Mono',monospace;color:var(--tx3);letter-spacing:0.08em;">COUNTRIES</div>
+      </div>
+    </div>
+    <div style="display:flex;border-bottom:1px solid var(--line);margin-top:14px;padding:0 8px;">
+      <sc-for list="{{ ptabs }}" as="t" hint-placeholder-count="3">
+        <div onClick="{{ t.go }}" style="padding:11px 13px;font:600 12.5px 'Archivo',sans-serif;color:{{ t.col }};border-bottom:2px solid {{ t.bd }};cursor:pointer;">{{ t.n }}</div>
+      </sc-for>
+    </div>
+    <sc-if value="{{ ptabLog }}" hint-placeholder-val="{{ true }}">
+      <div style="padding:14px 16px;display:flex;flex-direction:column;gap:9px;animation:dmFade 0.25s ease;">
+        <sc-for list="{{ logs }}" as="l" hint-placeholder-count="3">
+          <div style="display:flex;gap:11px;align-items:center;border:1px solid var(--line);background:var(--card);border-radius:14px;padding:10px;">
+            <div style="width:56px;height:56px;flex:none;"><image-slot id="log-{{ l.img }}" shape="rounded" radius="10" src="{{ l.src }}" placeholder="photo"></image-slot></div>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;">
+                <div style="font:700 13.5px 'Archivo',sans-serif;color:var(--tx);">{{ l.n }}</div>
+                <div style="font:500 10px 'IBM Plex Mono',monospace;color:var(--tx3);">{{ l.date }}</div>
+              </div>
+              <div style="font:500 10.5px 'Archivo',sans-serif;color:var(--tx3);">{{ l.loc }} · w/ {{ l.buddy }}</div>
+              <div style="font:600 11px 'IBM Plex Mono',monospace;color:var(--tx2);">{{ l.depth }} · {{ l.time }} · <span style="color:var(--acc);">{{ l.gas }}</span></div>
+            </div>
+          </div>
+        </sc-for>
+        <div style="text-align:center;font:600 12px 'Archivo',sans-serif;color:var(--acc);padding:6px 0;">View all 342 dives →</div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ ptabCerts }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:14px 16px;display:flex;flex-direction:column;gap:9px;animation:dmFade 0.25s ease;">
+        <sc-for list="{{ certs }}" as="ct" hint-placeholder-count="3">
+          <div style="display:flex;gap:12px;align-items:center;border:1px solid var(--line);background:var(--card);border-radius:14px;padding:12px;">
+            <div style="width:46px;height:46px;flex:none;border-radius:11px;background:linear-gradient(160deg,#023e8a,#0077b6);border:1px solid rgba(0,180,216,0.5);display:flex;align-items:center;justify-content:center;font:700 12px 'IBM Plex Mono',monospace;color:#caf0f8;">{{ ct.abbr }}</div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:2px;">
+              <div style="font:700 13.5px 'Archivo',sans-serif;color:var(--tx);">{{ ct.n }}</div>
+              <div style="font:500 10.5px 'Archivo',sans-serif;color:var(--tx3);">{{ ct.org }} · {{ ct.y }}</div>
+            </div>
+            <div style="font:600 8.5px 'IBM Plex Mono',monospace;color:var(--ok);letter-spacing:0.1em;">VERIFIED ✓</div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+    <sc-if value="{{ ptabWish }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:14px 16px;display:flex;flex-direction:column;gap:9px;animation:dmFade 0.25s ease;">
+        <div style="font:500 11px 'Archivo',sans-serif;color:var(--tx3);">Sites you've saved — want to dive.</div>
+        <sc-for list="{{ wish }}" as="w" hint-placeholder-count="3">
+          <div style="display:flex;gap:11px;align-items:center;border:1px solid var(--line);background:var(--card);border-radius:14px;padding:10px;">
+            <div style="width:48px;height:48px;flex:none;"><image-slot id="wish-{{ w.img }}" shape="rounded" radius="10" src="{{ w.src }}" placeholder="photo"></image-slot></div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:2px;">
+              <div style="font:700 13px 'Archivo',sans-serif;color:var(--tx);">{{ w.n }}</div>
+              <div style="font:500 10.5px 'Archivo',sans-serif;color:var(--tx3);">{{ w.loc }}</div>
+            </div>
+            <div style="font:600 11px 'IBM Plex Mono',monospace;color:var(--tx2);">{{ w.d }}</div>
+            <svg width="14" height="17" viewBox="0 0 14 17"><path d="M2 2h10v13l-5-3.4L2 15V2z" fill="var(--acc)"></path></svg>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+  </div>
+  <div style="position:absolute;left:0;right:0;bottom:0;z-index:40;display:flex;padding:9px 6px 25px;background:var(--sheet);border-top:1px solid var(--line);">
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;">
+      <svg width="22" height="22" viewBox="0 0 22 22"><rect x="4.5" y="4.5" width="13" height="13" rx="2.5" transform="rotate(45 11 11)" stroke="var(--tx3)" stroke-width="1.8" fill="none"></rect></svg>
+      <div style="font:600 9.5px 'Archivo',sans-serif;color:var(--tx3);">Map</div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;">
+      <svg width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="11" r="8" stroke="var(--tx3)" stroke-width="1.8" fill="none"></circle><polygon points="11,6.6 13.4,11 11,15.4 8.6,11" fill="var(--tx3)"></polygon></svg>
+      <div style="font:600 9.5px 'Archivo',sans-serif;color:var(--tx3);">Discover</div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;">
+      <svg width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="11" r="8" stroke="var(--tx3)" stroke-width="1.8" fill="none"></circle><line x1="11" y1="7.5" x2="11" y2="14.5" stroke="var(--tx3)" stroke-width="1.8" stroke-linecap="round"></line><line x1="7.5" y1="11" x2="14.5" y2="11" stroke="var(--tx3)" stroke-width="1.8" stroke-linecap="round"></line></svg>
+      <div style="font:600 9.5px 'Archivo',sans-serif;color:var(--tx3);">Log Dive</div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;">
+      <svg width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="7.5" r="3.4" stroke="var(--acc)" stroke-width="1.8" fill="none"></circle><path d="M4.5 18.5c0-3.6 2.9-5.6 6.5-5.6s6.5 2 6.5 5.6" stroke="var(--acc)" stroke-width="1.8" fill="none" stroke-linecap="round"></path></svg>
+      <div style="font:600 9.5px 'Archivo',sans-serif;color:var(--acc);">Profile</div>
+    </div>
+  </div>
+</div>
+</x-import>
+</div>
+
+</div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Display&quot;},&quot;units&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;metric&quot;,&quot;imperial&quot;],&quot;default&quot;:&quot;metric&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Display&quot;}}">
+class Component extends DCLogic {
+  state = {
+    tab: 'Overview', ptab: 'Logbook',
+    step: 1, viz: 18, cur: 'Mild', ts: '26', tb: '22', note: '', done: false,
+    depth: '45', time: '25', o2: '21', he: '35', gfLo: 40, gfHi: 75,
+    deco: [{ o2: 50, he: 0 }],
+  };
+  get isM() { return (this.props.units ?? 'metric') === 'metric'; }
+  get isDark() { return (this.props.theme ?? 'dark') === 'dark'; }
+  cv(m) { return Math.round(this.isM ? m : m * 3.28084); }
+  dep(m) { return this.cv(m) + (this.isM ? ' m' : ' ft'); }
+  depR(a, b) { return this.cv(a) + '\u2013' + this.cv(b) + (this.isM ? ' m' : ' ft'); }
+  tp(c) { return this.isM ? Math.round(c) + '\u00b0C' : Math.round(c * 9 / 5 + 32) + '\u00b0F'; }
+  num(v, def, min, max) { const n = parseFloat(v); return isNaN(n) ? def : Math.min(max, Math.max(min, n)); }
+  mixName(fO2, fHe) {
+    const o = Math.round(fO2 * 100), h = Math.round(fHe * 100);
+    if (h > 0) return 'TX ' + o + '/' + h;
+    if (o === 21) return 'AIR';
+    if (o === 100) return 'O\u2082';
+    return 'EAN' + o;
+  }
+  cnsLimit(pp) {
+    const T = [[0.5, 0], [0.6, 720], [0.7, 570], [0.8, 450], [0.9, 360], [1.0, 300], [1.1, 240], [1.2, 210], [1.3, 180], [1.4, 150], [1.5, 120], [1.6, 45], [1.8, 15]];
+    if (pp <= 0.5) return Infinity;
+    for (let i = 1; i < T.length; i++) {
+      if (pp <= T[i][0]) {
+        const [p0, l0] = T[i - 1], [p1, l1] = T[i];
+        if (l0 === 0) return l1;
+        return l0 + (l1 - l0) * (pp - p0) / (p1 - p0);
+      }
+    }
+    return 10;
+  }
+  plan() {
+    const rawD = this.num(this.state.depth, 45, 3, 300);
+    const D = this.isM ? rawD : rawD / 3.28084;
+    const BT = this.num(this.state.time, 25, 1, 240);
+    const fO2 = this.num(this.state.o2, 21, 5, 100) / 100;
+    const fHe = Math.min(this.num(this.state.he, 0, 0, 95) / 100, 1 - fO2);
+    const gLo = this.state.gfLo / 100, gHi = this.state.gfHi / 100;
+    const P0 = 1.013, PW = 0.0627;
+    const nT = [5, 8, 12.5, 18.5, 27, 38.3, 54.3, 77, 109, 146, 187, 239, 305, 390, 498, 635];
+    const nA = [1.1696, 1.0, 0.8618, 0.7562, 0.62, 0.5043, 0.441, 0.4, 0.375, 0.35, 0.3295, 0.3065, 0.2835, 0.261, 0.248, 0.2327];
+    const nB = [0.5578, 0.6514, 0.7222, 0.7825, 0.8126, 0.8434, 0.8693, 0.891, 0.9092, 0.9222, 0.9319, 0.9403, 0.9477, 0.9544, 0.9602, 0.9653];
+    const hT = [1.88, 3.02, 4.72, 6.99, 10.21, 14.48, 20.53, 29.11, 41.2, 55.19, 70.69, 90.34, 115.29, 147.42, 188.24, 240.03];
+    const hA = [1.6189, 1.383, 1.1919, 1.0458, 0.922, 0.8205, 0.7305, 0.6502, 0.595, 0.5545, 0.5333, 0.5189, 0.5181, 0.5176, 0.5172, 0.5119];
+    const hB = [0.477, 0.5747, 0.6527, 0.7223, 0.7582, 0.7957, 0.8279, 0.8553, 0.8757, 0.8903, 0.8997, 0.9073, 0.9122, 0.9171, 0.9217, 0.9267];
+    let pn = Array(16).fill(0.79 * (P0 - PW)), ph = Array(16).fill(0);
+    const gases = [{ fO2, fHe, name: this.mixName(fO2, fHe) }].concat(
+      this.state.deco.map(g => ({ fO2: g.o2 / 100, fHe: (g.he || 0) / 100, name: this.mixName(g.o2 / 100, (g.he || 0) / 100) })));
+    const best = d => { let b = gases[0]; for (const g of gases) { if (g.fO2 * (P0 + d / 10) <= 1.62 && g.fO2 > b.fO2) b = g; } return b; };
+    const ceilD = gf => {
+      let c = 0;
+      for (let i = 0; i < 16; i++) {
+        const pt = pn[i] + ph[i]; if (pt <= 0) continue;
+        const a = (nA[i] * pn[i] + hA[i] * ph[i]) / pt;
+        const b = (nB[i] * pn[i] + hB[i] * ph[i]) / pt;
+        const tol = (pt - a * gf) / (gf / b + 1 - gf);
+        c = Math.max(c, (tol - P0) * 10);
+      }
+      return c;
+    };
+    const dt = 1 / 30;
+    let t = 0, d = 0, cns = 0, otu = 0;
+    const step = (nd, g) => {
+      const pa = Math.max(0, P0 + nd / 10 - PW);
+      const fn2 = Math.max(0, 1 - g.fO2 - g.fHe);
+      for (let i = 0; i < 16; i++) {
+        pn[i] += (fn2 * pa - pn[i]) * (1 - Math.pow(2, -dt / nT[i]));
+        ph[i] += (g.fHe * pa - ph[i]) * (1 - Math.pow(2, -dt / hT[i]));
+      }
+      const pp = g.fO2 * (P0 + nd / 10);
+      if (pp > 0.5) { otu += dt * Math.pow((pp - 0.5) / 0.5, 0.83); cns += dt / this.cnsLimit(pp) * 100; }
+    };
+    const pts = [{ t: 0, d: 0 }];
+    while (d < D - 0.001 && t < BT) { d = Math.min(D, d + 18 * dt); step(d, gases[0]); t += dt; }
+    pts.push({ t, d: D });
+    while (t < BT) { step(D, gases[0]); t += dt; }
+    d = D; t = BT;
+    pts.push({ t, d: D });
+    const first = Math.ceil(Math.max(0, ceilD(gLo)) / 3) * 3;
+    const fs = Math.max(first, 3);
+    const gfAt = x => gHi + (gLo - gHi) * Math.min(Math.max(x, 0), fs) / fs;
+    const stops = []; let guard = 0;
+    while (d > 0.05 && guard < 300000) {
+      const next = d <= 3.001 ? 0 : (Math.ceil(d / 3 - 1e-6) - 1) * 3;
+      if (ceilD(gfAt(next)) <= next + 0.05) {
+        d = Math.max(next, d - 9 * dt); step(d, best(d)); t += dt; guard++;
+      } else {
+        const sd = Math.max(3, Math.round(d / 3) * 3);
+        const t0 = t;
+        while (ceilD(gfAt(next)) > next + 0.05 && guard < 300000) { step(sd, best(sd)); t += dt; guard++; }
+        const dur = t - t0;
+        if (dur >= 0.35) {
+          stops.push({ d: sd, dur, gas: best(sd).name });
+          pts.push({ t: t0, d: sd }, { t: t, d: sd });
+        }
+      }
+    }
+    pts.push({ t, d: 0 });
+    const ppB = fO2 * (P0 + D / 10);
+    const mod = (1.4 / fO2 - 1) * 10;
+    const end = Math.max(0, (D + 10) * (1 - fHe) - 10);
+    return { D, BT, fO2, fHe, t, stops, pts, cns, otu, ppB, mod, end, gases, overflow: guard >= 300000 };
+  }
+  renderVals() {
+    const S = this.state, isM = this.isM, isDark = this.isDark;
+    const dep = m => this.dep(m), cv = m => this.cv(m), depR = (a, b) => this.depR(a, b), tp = c => this.tp(c);
+    const tv = isDark
+      ? '--bg:#051422;--bg2:#081c30;--card:#0b2438;--card2:#12314b;--line:rgba(148,196,230,0.14);--tx:#eaf6fd;--tx2:#9fc3da;--tx3:#638aa3;--acc:#00b4d8;--accD:#0077b6;--chip:rgba(0,180,216,0.12);--warn:#ffb703;--dang:#ff5d7d;--ok:#33d6c3;--inputbg:#08192b;--sheet:#081c30;--shadow:rgba(0,0,0,0.5);'
+      : '--bg:#eef5fa;--bg2:#ffffff;--card:#ffffff;--card2:#e8f2f9;--line:rgba(2,62,138,0.15);--tx:#0a2540;--tx2:#3f6580;--tx3:#7c9cb2;--acc:#0096c7;--accD:#023e8a;--chip:rgba(0,150,199,0.10);--warn:#b06f00;--dang:#d23359;--ok:#0f9488;--inputbg:#f2f8fc;--sheet:#ffffff;--shadow:rgba(30,60,90,0.2);';
+    // ── Screen 1 data
+    const pins = [
+      { x: '40%', y: '31%', s: '22px', bg: 'var(--acc)', ring: 'rgba(0,180,216,0.25)', lbl: 'Blue Hole \u00b7 ' + depR(7, 110) },
+      { x: '56%', y: '21%', s: '12px', bg: '#48cae4', ring: 'rgba(0,0,0,0)', lbl: '' },
+      { x: '28%', y: '46%', s: '12px', bg: '#48cae4', ring: 'rgba(0,0,0,0)', lbl: '' },
+      { x: '65%', y: '39%', s: '12px', bg: '#48cae4', ring: 'rgba(0,0,0,0)', lbl: '' },
+      { x: '49%', y: '55%', s: '12px', bg: '#48cae4', ring: 'rgba(0,0,0,0)', lbl: '' },
+    ];
+    const chips = [{ n: 'Depth \u25be' }, { n: 'Current \u25be' }, { n: 'Type \u25be' }, { n: 'Tech-friendly', on: true }].map(c => ({
+      n: c.n,
+      col: c.on ? '#04121f' : 'var(--tx2)',
+      bg: c.on ? 'var(--acc)' : 'rgba(6,24,40,0.85)',
+      bd: c.on ? 'var(--acc)' : 'rgba(148,196,230,0.2)',
+    }));
+    const sites = [
+      { img: 'bluehole', src: 'images/d1.png', name: 'Blue Hole', loc: 'Dahab \u00b7 Egypt', type: 'WALL', depth: depR(7, 110), cur: 'LOW', curCol: 'var(--ok)', vizOn: '\u25cf\u25cf\u25cf\u25cf', vizOff: '\u25cb', rating: '4.8' },
+      { img: 'thistlegorm', src: 'images/d2.png', name: 'SS Thistlegorm', loc: 'Ras Muhammad \u00b7 Egypt', type: 'WRECK', depth: depR(16, 32), cur: 'MODERATE', curCol: 'var(--warn)', vizOn: '\u25cf\u25cf\u25cf\u25cf', vizOff: '\u25cb', rating: '4.9' },
+      { img: 'canyon', src: 'images/d3.png', name: 'The Canyon', loc: 'Dahab \u00b7 Egypt', type: 'CAVE', depth: depR(12, 54), cur: 'LOW', curCol: 'var(--ok)', vizOn: '\u25cf\u25cf\u25cf', vizOff: '\u25cb\u25cb', rating: '4.7' },
+    ];
+    // ── Screen 2 data
+    const specs = [
+      { i: '\u25bc', v: dep(32), l: 'Max depth' },
+      { i: '\u25d0', v: dep(24), l: 'Avg viz' },
+      { i: '\u224b', v: 'Moderate', l: 'Current' },
+      { i: '\u00b0', v: tp(26), l: 'Water temp' },
+      { i: '\u25c6', v: 'Advanced', l: 'Level' },
+    ];
+    const tabNames = ['Overview', 'Conditions', 'Photos', 'Operators', 'Tech'];
+    const tabs = tabNames.map(n => ({
+      n, go: () => this.setState({ tab: n }),
+      col: S.tab === n ? 'var(--acc)' : 'var(--tx3)',
+      bd: S.tab === n ? 'var(--acc)' : 'rgba(0,0,0,0)',
+    }));
+    const marine = [
+      { n: 'Batfish school', c: '#48cae4' }, { n: 'Giant trevally', c: '#90e0ef' },
+      { n: 'Hawksbill turtle', c: '#2ec4b6' }, { n: 'Crocodilefish', c: '#ffd166' }, { n: 'Lionfish', c: '#ef476f' },
+    ];
+    const temps = [
+      { d: 'SURFACE', t: tp(26) }, { d: cv(18) + (isM ? ' M' : ' FT'), t: tp(24) }, { d: cv(30) + (isM ? ' M' : ' FT'), t: tp(22) },
+    ];
+    const reports = [
+      { txt: '@sandra_k \u00b7 3 h ago \u2014 viz ' + dep(24) + ', mild current on the bow' },
+      { txt: '@wreck_rat \u00b7 yesterday \u2014 ripping by 13:00, dive it early' },
+    ];
+    const operators = [
+      { n: 'Red Sea Explorers', base: 'Hurghada \u00b7 liveaboard + day boats', kit: 'TWINSETS \u00b7 STAGES \u00b7 O\u2082 \u00b7 SOFNOLIME', r: '4.9 \u00b7 412 tech dives guided', tech: true },
+      { n: 'Sinai Divers College', base: 'Sharm El Sheikh \u00b7 day boats', kit: 'TWINSETS \u00b7 EAN FILLS', r: '4.7 \u00b7 96 tech dives guided', tech: true },
+    ];
+    const mods = [
+      { g: 'AIR', m: dep(56) }, { g: 'EAN30', m: dep(36) }, { g: 'EAN32', m: dep(33) },
+    ];
+    // ── Screen 3 plan
+    const P = this.plan();
+    const stops = P.stops.slice(0, 9).map(s => ({ d: cv(s.d) + (isM ? ' m' : ' ft'), t: Math.max(1, Math.ceil(s.dur - 0.03)) + '\u2032', gas: s.gas }));
+    const maxT = Math.max(P.t, 1) * 1.05, maxD = Math.max(P.D, 6) * 1.18;
+    const X0 = 12, W = 106, Y0 = 16, H = 272;
+    const px = p => (X0 + p.t / maxT * W).toFixed(1), py = p => (Y0 + p.d / maxD * H).toFixed(1);
+    const ppath = P.pts.map((p, i) => (i ? 'L' : 'M') + px(p) + ' ' + py(p)).join(' ');
+    const seen = {};
+    const glines = P.stops.filter(s => !seen[s.d] && (seen[s.d] = 1)).map(s => ({ y: py({ t: 0, d: s.d }), ty: (parseFloat(py({ t: 0, d: s.d })) + 3).toFixed(1), label: String(cv(s.d)) }))
+      .concat([{ y: py({ t: 0, d: P.D }), ty: (parseFloat(py({ t: 0, d: P.D })) + 3).toFixed(1), label: String(cv(P.D)) }]);
+    const pdots = P.stops.map((s, i) => { const arr = P.pts.find(p => p.d === s.d && p.t > P.BT); return arr ? { x: px(arr), y: py(arr) } : null; }).filter(Boolean);
+    const gasChips = S.deco.map((g, i) => ({
+      label: this.mixName(g.o2 / 100, (g.he || 0) / 100) + ' \u00b7 MOD ' + dep(Math.floor((1.6 / (g.o2 / 100) - 1) * 10)),
+      rm: () => this.setState({ deco: S.deco.filter((_, j) => j !== i) }),
+    }));
+    const has50 = S.deco.some(g => g.o2 === 50), has100 = S.deco.some(g => g.o2 === 100);
+    const nextGas = !has50 ? 'EAN50' : (!has100 ? 'O\u2082 (100%)' : '');
+    const addGas = () => this.setState({ deco: S.deco.concat([{ o2: has50 ? 100 : 50, he: 0 }]) });
+    let warnText = null, sev = null;
+    if (P.overflow) { warnText = 'PLAN EXCEEDS LIMITS \u2014 REDUCE DEPTH OR TIME'; sev = 'dang'; }
+    else if (P.ppB > 1.405) { warnText = 'MOD EXCEEDED \u2014 ppO\u2082 ' + P.ppB.toFixed(2) + ' AT ' + dep(P.D) + ' \u00b7 HAPTIC ALERT'; sev = 'dang'; }
+    else if (P.cns >= 75) { warnText = 'CNS ' + Math.round(P.cns) + '% \u2014 APPROACHING LIMIT \u00b7 HAPTIC ALERT'; sev = 'warn'; }
+    else if (P.end > 40) { warnText = 'END ' + dep(Math.round(P.end)) + ' \u2014 CONSIDER MORE HELIUM'; sev = 'warn'; }
+    const wc = sev === 'dang' ? 'var(--dang)' : 'var(--warn)';
+    // ── Screen 4 flow
+    const dots = [1, 2, 3, 4].map(i => ({ w: i === S.step ? '22px' : '8px', bg: i <= S.step ? 'var(--acc)' : 'var(--line)' }));
+    const curNames = [
+      { n: 'None', i: '\u2014', d: 'Slack water' },
+      { n: 'Mild', i: '\u203a', d: 'Easy to fin against' },
+      { n: 'Moderate', i: '\u203a\u203a', d: 'Work to hold position' },
+      { n: 'Strong', i: '\u203a\u203a\u203a', d: 'Drift dive territory' },
+      { n: 'Ripping', i: '\u203a\u203a\u203a\u203a', d: 'Hook in or abort' },
+    ];
+    const curs = curNames.map(c => ({
+      ...c, pick: () => this.setState({ cur: c.n }),
+      bd: S.cur === c.n ? 'var(--acc)' : 'var(--line)',
+      bg: S.cur === c.n ? 'var(--chip)' : 'var(--card)',
+    }));
+    const vizWord = S.viz < 5 ? 'Poor' : S.viz < 10 ? 'Fair' : S.viz < 18 ? 'Good' : S.viz < 25 ? 'Great' : 'Gin-clear';
+    const tsN = this.num(S.ts, 26, -2, 130), tbN = this.num(S.tb, 22, -2, 130);
+    const tDeltaN = Math.abs(tsN - tbN);
+    // ── Screen 5 data
+    const ptabs = ['Logbook', 'Certifications', 'Wishlist'].map(n => ({
+      n, go: () => this.setState({ ptab: n }),
+      col: S.ptab === n ? 'var(--acc)' : 'var(--tx3)',
+      bd: S.ptab === n ? 'var(--acc)' : 'rgba(0,0,0,0)',
+    }));
+    const logs = [
+      { img: 'bh', src: 'images/d1.png', n: 'Blue Hole', loc: 'Dahab \u00b7 Egypt', date: 'JUL 6', depth: dep(52), time: '44 min', gas: 'TX 21/35', buddy: 'Sam R.' },
+      { img: 'lib', src: 'images/p3.png', n: 'USAT Liberty', loc: 'Tulamben \u00b7 Bali', date: 'JUN 28', depth: dep(29), time: '54 min', gas: 'EAN32', buddy: 'Jonas M.' },
+      { img: 'dg', src: 'images/p4.png', n: "Devil's Grotto", loc: 'George Town \u00b7 Grand Cayman', date: 'JUN 12', depth: dep(17), time: '61 min', gas: 'AIR', buddy: 'Ana L.' },
+    ];
+    const certs = [
+      { abbr: 'T50', n: 'Tec 50', org: 'PADI TecRec', y: '2024' },
+      { abbr: 'AN', n: 'Advanced Nitrox + Deco Procedures', org: 'TDI', y: '2022' },
+      { abbr: 'RD', n: 'Rescue Diver', org: 'PADI', y: '2019' },
+    ];
+    const wish = [
+      { img: 'jelly', src: 'images/jelly.png', n: 'Jellyfish Lake', loc: 'Eil Malk \u00b7 Palau', d: depR(0, 10) },
+      { img: 'sipadan', src: 'images/p1.png', n: 'Barracuda Point', loc: 'Sipadan \u00b7 Malaysia', d: depR(5, 30) },
+      { img: 'silfra', src: 'images/silfra.png', n: 'Silfra Fissure', loc: 'Thingvellir \u00b7 Iceland', d: depR(7, 18) },
+    ];
+    return {
+      tv, isDark, mapFrameDark: true,
+      uD: isM ? 'M' : 'FT', uT: isM ? '\u00b0C' : '\u00b0F',
+      // s1
+      pins, chips, sites,
+      // s2
+      specs, tabs, marine, temps, reports, operators, mods,
+      condViz: dep(24),
+      tabOverview: S.tab === 'Overview', tabConditions: S.tab === 'Conditions', tabPhotos: S.tab === 'Photos',
+      tabOperators: S.tab === 'Operators', tabTech: S.tab === 'Tech',
+      // s3
+      depth: S.depth, time: S.time, o2: S.o2, he: S.he, gfLo: S.gfLo, gfHi: S.gfHi,
+      setDepth: e => this.setState({ depth: e.target.value }),
+      setTime: e => this.setState({ time: e.target.value }),
+      setO2: e => this.setState({ o2: e.target.value }),
+      setHe: e => this.setState({ he: e.target.value }),
+      setGfLo: e => this.setState({ gfLo: Math.min(parseInt(e.target.value, 10), this.state.gfHi) }),
+      setGfHi: e => this.setState({ gfHi: Math.max(parseInt(e.target.value, 10), this.state.gfLo) }),
+      mixLine: P.gases[0].name + ' \u00b7 MOD ' + dep(Math.floor(P.mod)) + ' \u00b7 END ' + dep(Math.round(P.end)) + ' \u00b7 ppO\u2082 ' + P.ppB.toFixed(2),
+      gasChips, canAddGas: !!nextGas && S.deco.length < 3, nextGas, addGas,
+      warnText, warnCol: wc, warnDot: wc,
+      warnBg: sev === 'dang' ? 'rgba(255,93,125,0.1)' : 'rgba(255,183,3,0.08)',
+      warnBd: sev === 'dang' ? 'rgba(255,93,125,0.45)' : 'rgba(255,183,3,0.4)',
+      runtime: Math.ceil(P.t) + '\u2032', tts: Math.ceil(P.t - P.BT) + '\u2032',
+      cns: Math.round(P.cns) + '%', cnsCol: P.cns >= 75 ? 'var(--dang)' : P.cns >= 50 ? 'var(--warn)' : 'var(--tx)',
+      otu: String(Math.round(P.otu)),
+      stops, noDeco: stops.length === 0, ppath, glines, pdots,
+      // s4
+      step1: S.step === 1 && !S.done, step2: S.step === 2 && !S.done, step3: S.step === 3 && !S.done,
+      step4: S.step === 4 && !S.done, done: S.done, notDone: !S.done,
+      dots, curs, viz: S.viz, vizS: dep(S.viz), vizWord,
+      vizPct: (S.viz / 30 * 100).toFixed(1) + '%',
+      vizLo: cv(0) + (isM ? ' m' : ' ft'), vizMid: cv(15) + (isM ? ' m' : ' ft'), vizHi: cv(30) + (isM ? ' m' : ' ft'),
+      setViz: e => this.setState({ viz: parseInt(e.target.value, 10) }),
+      ts: S.ts, tb: S.tb, setTs: e => this.setState({ ts: e.target.value }), setTb: e => this.setState({ tb: e.target.value }),
+      thermocline: tDeltaN >= 3, tDelta: Math.round(tDeltaN) + (isM ? '\u00b0C' : '\u00b0F'),
+      note: S.note, setNote: e => this.setState({ note: e.target.value }),
+      showBack: S.step > 1, ctaLabel: S.step === 4 ? 'Submit report' : 'Continue',
+      nextStep: () => S.step < 4 ? this.setState({ step: S.step + 1 }) : this.setState({ done: true }),
+      backStep: () => this.setState({ step: Math.max(1, S.step - 1) }),
+      resetFlow: () => this.setState({ step: 1, done: false }),
+      // s5
+      ptabs, logs, certs, wish, maxDepthS: dep(58).replace(' ', ''),
+      ptabLog: S.ptab === 'Logbook', ptabCerts: S.ptab === 'Certifications', ptabWish: S.ptab === 'Wishlist',
+    };
+  }
+}
+</script>
+</body>
+</html>
