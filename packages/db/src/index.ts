@@ -6,6 +6,10 @@
  */
 
 export type { Database, Enums, Json, Tables, TablesInsert, TablesUpdate } from './types'
+export { createClient } from './client'
+export { createServerSupabaseClient } from './server'
+export { useAuth, useSignIn } from './hooks/useAuth'
+export type { AuthState } from './hooks/useAuth'
 
 import type { Enums, Tables } from './types'
 

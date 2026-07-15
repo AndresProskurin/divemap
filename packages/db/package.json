@@ -26,6 +26,7 @@
     }
   },
   "devDependencies": {
+    "@types/node": "^20.19.9",
     "@types/react": "^18.3.12",
     "supabase": "^2.54.11",
     "typescript": "^5.9.3"
