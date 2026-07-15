@@ -1,0 +1,24 @@
+{
+  "name": "divemap",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "turbo run dev --filter=@divemap/web",
+    "mobile": "turbo run dev --filter=@divemap/mobile",
+    "db:push": "turbo run db:push --filter=@divemap/db",
+    "db:types": "turbo run db:types --filter=@divemap/db",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "build": "turbo run build",
+    "clean": "turbo run clean && rm -rf node_modules"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.5",
+    "turbo": "^2.10.5",
+    "typescript": "^5.9.3"
+  }
+}
