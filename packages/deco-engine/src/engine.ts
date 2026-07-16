@@ -120,11 +120,12 @@ function loadSegment(
   const dP = (endDepth - startDepth) / 10 / dt  // bar/min
 
   for (let i = 0; i < N; i++) {
-    const [htN2, , , htHe] = COMPARTMENTS[i]
-    const kN2 = Math.LN2 / htN2
-    const kHe = Math.LN2 / htHe
-    t.n2[i] = schreiner(t.n2[i], (pAmbStart - P_WVP) * fN2, dP * fN2, kN2, dt)
-    t.he[i] = schreiner(t.he[i], (pAmbStart - P_WVP) * fHe, dP * fHe, kHe, dt)
+    // COMPARTMENTS is a fixed-length tuple; index is always in range.
+    const comp = COMPARTMENTS[i]!
+    const kN2 = Math.LN2 / comp[0]
+    const kHe = Math.LN2 / comp[3]
+    t.n2[i] = schreiner(t.n2[i]!, (pAmbStart - P_WVP) * fN2, dP * fN2, kN2, dt)
+    t.he[i] = schreiner(t.he[i]!, (pAmbStart - P_WVP) * fHe, dP * fHe, kHe, dt)
   }
 }
 
@@ -133,13 +134,13 @@ function loadSegment(
 function ceiling(t: Tissues, gf: number, pSurf: number): number {
   let max = 0
   for (let i = 0; i < N; i++) {
-    const [, aN2, bN2, , aHe, bHe] = COMPARTMENTS[i]
-    const pN2 = t.n2[i]
-    const pHe = t.he[i]
+    const comp = COMPARTMENTS[i]!
+    const pN2 = t.n2[i]!
+    const pHe = t.he[i]!
     const pTot = pN2 + pHe
     if (pTot <= 0) continue
-    const a = (aN2 * pN2 + aHe * pHe) / pTot
-    const b = (bN2 * pN2 + bHe * pHe) / pTot
+    const a = (comp[1] * pN2 + comp[4] * pHe) / pTot
+    const b = (comp[2] * pN2 + comp[5] * pHe) / pTot
     const pCeil = (pTot - a * gf) / (gf / b + 1 - gf)
     const d = Math.max(0, (pCeil - pSurf) * 10)
     if (d > max) max = d
