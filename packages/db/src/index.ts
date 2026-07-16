@@ -27,6 +27,9 @@ export type { InsertConditionsReportInput } from './queries/conditions'
 export { getUserProfile, getUserDives, getUserWishlist } from './queries/profile'
 export type { DiveWithSite, WishlistSite } from './queries/profile'
 
+export { insertDive } from './queries/dives'
+export type { InsertDiveInput } from './queries/dives'
+
 import type { Enums, Tables } from './types'
 
 // ─── DOMAIN ALIASES ──────────────────────────────────────────────────────────
