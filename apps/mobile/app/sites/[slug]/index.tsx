@@ -169,6 +169,11 @@ export default function SiteDetailScreen() {
             </TouchableOpacity>
           </Link>
         </View>
+        <Link href={`/sites/${site.slug}/report`} asChild>
+          <TouchableOpacity style={s.reportBtn}>
+            <Text style={s.reportBtnText}>Report Conditions</Text>
+          </TouchableOpacity>
+        </Link>
       </ScrollView>
     </View>
   )
@@ -354,5 +359,17 @@ const s = StyleSheet.create({
     fontSize: 14,
     color: colors.acc,
     fontWeight: '600',
+  },
+  reportBtn: {
+    borderRadius: 14,
+    padding: 13,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  reportBtnText: {
+    fontSize: 13.5,
+    fontWeight: '600',
+    color: colors.tx3,
   },
 })
