@@ -26,6 +26,9 @@ importers:
       '@divemap/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@divemap/deco-engine':
+        specifier: workspace:*
+        version: link:../../packages/deco-engine
       '@divemap/ui':
         specifier: workspace:*
         version: link:../../packages/ui
