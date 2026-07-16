@@ -14,14 +14,18 @@
     "@divemap/ui": "workspace:*",
     "@supabase/ssr": "^0.12.3",
     "@supabase/supabase-js": "^2.110.5",
+    "mapbox-gl": "^3.12.0",
     "next": "14.2.35",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "supercluster": "^8.0.1"
   },
   "devDependencies": {
+    "@types/mapbox-gl": "^3.5.0",
     "@types/node": "^20.19.9",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
+    "@types/supercluster": "^7.1.3",
     "autoprefixer": "^10.4.20",
     "eslint": "^8.57.1",
     "eslint-config-next": "14.2.35",
