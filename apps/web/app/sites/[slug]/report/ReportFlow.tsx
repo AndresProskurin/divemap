@@ -8,24 +8,21 @@ type CurrentLevel = 'none' | 'mild' | 'moderate' | 'strong' | 'ripping'
 type Step = 1 | 2 | 3 | 4 | 'done'
 
 // U+203A SINGLE RIGHT-POINTING ANGLE QUOTATION MARK (›)
-// U+2023 TRIANGULAR BULLET (‣)
-// U+25CB WHITE CIRCLE (○)
+// U+2014 EM DASH (—)
 const CURRENT_OPTIONS: Array<{ value: CurrentLevel; glyph: string; name: string; desc: string }> = [
-  { value: 'none',     glyph: '○',             name: 'None',     desc: 'No noticeable current' },
-  { value: 'mild',     glyph: '›',             name: 'Mild',     desc: 'Slight movement, easy swimming' },
-  { value: 'moderate', glyph: '››',       name: 'Moderate', desc: 'Noticeable, requires effort' },
-  { value: 'strong',   glyph: '›››', name: 'Strong',   desc: 'Very strong, tiring' },
-  { value: 'ripping',  glyph: '›‣›', name: 'Ripping',  desc: 'Dangerous, entry not advised' },
+  { value: 'none',     glyph: '—',                             name: 'None',     desc: 'Slack water' },
+  { value: 'mild',     glyph: '›',                             name: 'Mild',     desc: 'Easy to fin against' },
+  { value: 'moderate', glyph: '››',                 name: 'Moderate', desc: 'Work to hold position' },
+  { value: 'strong',   glyph: '›››',       name: 'Strong',   desc: 'Drift dive territory' },
+  { value: 'ripping',  glyph: '››››', name: 'Ripping',  desc: 'Hook in or abort' },
 ]
 
 function vizWord(m: number): string {
-  if (m === 0)  return 'Zero viz'
-  if (m <= 3)   return 'Very poor'
-  if (m <= 7)   return 'Poor'
-  if (m <= 12)  return 'Fair'
-  if (m <= 20)  return 'Good'
-  if (m <= 25)  return 'Excellent'
-  return 'Exceptional'
+  if (m < 5)  return 'Poor'
+  if (m < 10) return 'Fair'
+  if (m < 18) return 'Good'
+  if (m < 25) return 'Great'
+  return 'Gin-clear'
 }
 
 interface Props {
@@ -53,7 +50,7 @@ export function ReportFlow({ siteId, siteName, siteSlug, siteLocation }: Props) 
   const ts = parseFloat(tempSurface)
   const tb = parseFloat(tempBottom)
   const thermoclineDelta = !isNaN(ts) && !isNaN(tb) ? Math.abs(ts - tb) : 0
-  const thermocline = thermoclineDelta >= 5
+  const thermocline = thermoclineDelta >= 3
 
   function goBack() {
     if (step === 2) setStep(1)

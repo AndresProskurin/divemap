@@ -24,6 +24,9 @@ export type { MarineSpecies } from './queries/sites'
 export { insertConditionsReport } from './queries/conditions'
 export type { InsertConditionsReportInput } from './queries/conditions'
 
+export { getUserProfile, getUserDives, getUserWishlist } from './queries/profile'
+export type { DiveWithSite, WishlistSite } from './queries/profile'
+
 import type { Enums, Tables } from './types'
 
 // ─── DOMAIN ALIASES ──────────────────────────────────────────────────────────
