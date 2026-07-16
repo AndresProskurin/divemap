@@ -19,8 +19,9 @@ export {
   getSiteMarineLife,
   getTopSiteSlugs,
   searchSites,
+  browseSites,
 } from './queries/sites'
-export type { MarineSpecies, SiteSearchResult } from './queries/sites'
+export type { MarineSpecies, SiteSearchResult, SiteListItem, BrowseSitesOptions } from './queries/sites'
 
 export { insertConditionsReport } from './queries/conditions'
 export type { InsertConditionsReportInput } from './queries/conditions'

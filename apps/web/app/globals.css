@@ -43,3 +43,8 @@ body {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+@keyframes slideRight {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(350%); }
+}

@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database, DiveSite, ConditionsReport, SitePhoto, Operator } from '../index'
+import type { Database, DiveSite, ConditionsReport, SitePhoto, Operator, Enums } from '../index'
 
 type Client = SupabaseClient<Database>
 
@@ -94,6 +94,53 @@ export interface SiteSearchResult {
   slug: string
   country: string | null
   depth_max_m: number | null
+}
+
+export interface SiteListItem extends SiteSearchResult {
+  type: string
+  level: string | null
+  viz_score: number | null
+  rating: number | null
+}
+
+export interface BrowseSitesOptions {
+  query?: string
+  type?: string
+  level?: string
+  country?: string
+  page?: number
+  pageSize?: number
+}
+
+export interface BrowseSitesResult {
+  sites: SiteListItem[]
+  total: number
+}
+
+export async function browseSites(
+  options: BrowseSitesOptions,
+  supabase: Client,
+): Promise<BrowseSitesResult> {
+  const { query, type, level, country, page = 1, pageSize = 24 } = options
+  const from = (page - 1) * pageSize
+  const to = from + pageSize - 1
+
+  let q = supabase
+    .from('dive_sites')
+    .select('id, name, slug, country, depth_max_m, type, level, viz_score, rating', { count: 'exact' })
+
+  if (query?.trim()) q = q.ilike('name', `%${query.trim()}%`)
+  if (type) q = q.eq('type', type as Enums<'site_type'>)
+  if (level) q = q.eq('level', level as Enums<'dive_level'>)
+  if (country) q = q.ilike('country', country)
+
+  q = q.order('rating', { ascending: false }).range(from, to)
+
+  const { data, count } = await q
+  return {
+    sites: (data ?? []) as unknown as SiteListItem[],
+    total: count ?? 0,
+  }
 }
 
 export async function searchSites(
