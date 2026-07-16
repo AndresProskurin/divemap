@@ -68,5 +68,17 @@ export function useSignIn() {
     await supabase.auth.signOut()
   }
 
-  return { signInWithGoogle, signInWithEmail, signUpWithEmail, signOut }
+  const resetPassword = async (email: string) => {
+    const supabase = createClient()
+    return supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/callback?next=/auth/update-password`,
+    })
+  }
+
+  const updatePassword = async (newPassword: string) => {
+    const supabase = createClient()
+    return supabase.auth.updateUser({ password: newPassword })
+  }
+
+  return { signInWithGoogle, signInWithEmail, signUpWithEmail, signOut, resetPassword, updatePassword }
 }

@@ -141,6 +141,9 @@ export function SignInPage() {
           <Link href="/auth/sign-up" style={{ fontSize: '13px', fontWeight: 500, color: 'var(--acc)', textDecoration: 'none' }}>
             New to DiveMap? Create an account →
           </Link>
+          <Link href="/auth/reset-password" style={{ fontSize: '12px', fontWeight: 500, color: 'var(--tx3)', textDecoration: 'none' }}>
+            Forgot password?
+          </Link>
           <Link href="/" style={{ fontSize: '12px', fontWeight: 500, color: 'var(--tx3)', textDecoration: 'none' }}>
             Continue without signing in
           </Link>
