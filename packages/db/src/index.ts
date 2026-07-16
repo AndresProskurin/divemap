@@ -11,6 +11,16 @@ export { createServerSupabaseClient } from './server'
 export { useAuth, useSignIn } from './hooks/useAuth'
 export type { AuthState } from './hooks/useAuth'
 
+export {
+  getSiteBySlug,
+  getSiteConditions,
+  getSitePhotos,
+  getSiteOperators,
+  getSiteMarineLife,
+  getTopSiteSlugs,
+} from './queries/sites'
+export type { MarineSpecies } from './queries/sites'
+
 import type { Enums, Tables } from './types'
 
 // ─── DOMAIN ALIASES ──────────────────────────────────────────────────────────
