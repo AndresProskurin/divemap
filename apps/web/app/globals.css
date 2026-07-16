@@ -39,3 +39,7 @@ body {
 @keyframes dmDraw {
   to { stroke-dashoffset: 0; }
 }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

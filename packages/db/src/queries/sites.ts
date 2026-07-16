@@ -87,3 +87,26 @@ export async function getTopSiteSlugs(limit: number, supabase: Client): Promise<
     .limit(limit)
   return (data ?? []).map((s) => s.slug)
 }
+
+export interface SiteSearchResult {
+  id: string
+  name: string
+  slug: string
+  country: string | null
+  depth_max_m: number | null
+}
+
+export async function searchSites(
+  query: string,
+  supabase: Client,
+  limit = 8,
+): Promise<SiteSearchResult[]> {
+  if (!query.trim()) return []
+  const { data } = await supabase
+    .from('dive_sites')
+    .select('id, name, slug, country, depth_max_m')
+    .ilike('name', `%${query.trim()}%`)
+    .order('rating', { ascending: false })
+    .limit(limit)
+  return (data ?? []) as SiteSearchResult[]
+}

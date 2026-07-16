@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, FormEvent } from 'react'
+import { useState, useEffect, useRef, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { createClient, insertDive } from '@divemap/db'
+import { createClient, insertDive, searchSites } from '@divemap/db'
+import type { SiteSearchResult } from '@divemap/db'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -79,6 +80,142 @@ const MONO_INPUT_STYLE: React.CSSProperties = {
   textAlign: 'center',
 }
 
+// ── Site search field ─────────────────────────────────────────────────────────
+
+interface SiteSearchFieldProps {
+  value: SiteSearchResult | null
+  onChange: (site: SiteSearchResult | null) => void
+}
+
+function SiteSearchField({ value, onChange }: SiteSearchFieldProps) {
+  const [query, setQuery] = useState(value?.name ?? '')
+  const [results, setResults] = useState<SiteSearchResult[]>([])
+  const [open, setOpen] = useState(false)
+  const [searching, setSearching] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    setQuery(value?.name ?? '')
+  }, [value])
+
+  useEffect(() => {
+    if (value) { setResults([]); return }
+    if (!query.trim()) { setResults([]); return }
+    const t = setTimeout(async () => {
+      setSearching(true)
+      const supabase = createClient()
+      const hits = await searchSites(query, supabase)
+      setResults(hits)
+      setSearching(false)
+      setOpen(hits.length > 0)
+    }, 280)
+    return () => clearTimeout(t)
+  }, [query, value])
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [])
+
+  function select(site: SiteSearchResult) {
+    onChange(site)
+    setQuery(site.name)
+    setOpen(false)
+  }
+
+  function clear() {
+    onChange(null)
+    setQuery('')
+    setResults([])
+    setOpen(false)
+  }
+
+  return (
+    <div ref={containerRef} style={{ position: 'relative' }}>
+      <div style={{ position: 'relative' }}>
+        <input
+          type="text"
+          placeholder="Search dive sites…"
+          value={query}
+          onChange={e => { setQuery(e.target.value); onChange(null) }}
+          onFocus={() => results.length > 0 && setOpen(true)}
+          style={{ ...INPUT_STYLE, paddingRight: value ? '36px' : '14px' }}
+        />
+        {searching && (
+          <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', width: '14px', height: '14px', borderRadius: '50%', border: '2px solid var(--tx3)', borderTopColor: 'var(--acc)', animation: 'spin 0.6s linear infinite' }} />
+        )}
+        {value && (
+          <button
+            type="button"
+            onClick={clear}
+            style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)', fontSize: '16px', lineHeight: 1, padding: '4px' }}
+          >
+            ×
+          </button>
+        )}
+      </div>
+
+      {/* Selected site chip */}
+      {value && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--chip)', border: '1px solid rgba(0,180,216,0.35)', borderRadius: '10px', padding: '8px 12px', marginTop: '8px' }}>
+          <svg width="12" height="12" viewBox="0 0 12 12">
+            <circle cx="6" cy="5" r="2.5" stroke="var(--acc)" strokeWidth="1.4" fill="none" />
+            <path d="M6 12 C6 12 1 7.5 1 5a5 5 0 0 1 10 0c0 2.5-5 7-5 7z" stroke="var(--acc)" strokeWidth="1.4" fill="none" />
+          </svg>
+          <span className="font-semibold" style={{ fontSize: '12px', color: 'var(--acc)', flex: 1 }}>{value.name}</span>
+          {value.country && (
+            <span className="font-mono" style={{ fontSize: '10px', color: 'var(--tx3)' }}>{value.country}</span>
+          )}
+          {value.depth_max_m && (
+            <span className="font-mono font-semibold" style={{ fontSize: '10px', color: 'var(--tx2)' }}>↓{value.depth_max_m}m</span>
+          )}
+        </div>
+      )}
+
+      {/* Dropdown */}
+      {open && results.length > 0 && (
+        <div
+          style={{
+            position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50, marginTop: '4px',
+            background: 'var(--card2)', border: '1px solid var(--line)', borderRadius: '14px',
+            overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+          }}
+        >
+          {results.map((site, i) => (
+            <button
+              key={site.id}
+              type="button"
+              onClick={() => select(site)}
+              style={{
+                width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer',
+                padding: '11px 14px', borderTop: i > 0 ? '1px solid var(--line)' : 'none',
+                display: 'flex', alignItems: 'center', gap: '10px',
+              }}
+            >
+              <svg width="11" height="14" viewBox="0 0 11 14" style={{ flexShrink: 0 }}>
+                <circle cx="5.5" cy="5" r="2.2" stroke="var(--tx3)" strokeWidth="1.3" fill="none" />
+                <path d="M5.5 13.5 C5.5 13.5 0.5 8.5 0.5 5a5 5 0 0 1 10 0c0 3.5-5 8.5-5 8.5z" stroke="var(--tx3)" strokeWidth="1.3" fill="none" />
+              </svg>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="font-semibold truncate" style={{ fontSize: '13px', color: 'var(--tx)' }}>{site.name}</div>
+                <div className="font-mono" style={{ fontSize: '10px', color: 'var(--tx3)' }}>{site.country ?? ''}</div>
+              </div>
+              {site.depth_max_m && (
+                <div className="font-mono font-semibold flex-shrink-0" style={{ fontSize: '10.5px', color: 'var(--tx2)' }}>↓{site.depth_max_m}m</div>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 interface Props {
@@ -88,6 +225,9 @@ interface Props {
 export function LogDivePage({ prelinkedSite }: Props) {
   const router = useRouter()
 
+  const [selectedSite, setSelectedSite] = useState<SiteSearchResult | null>(
+    prelinkedSite ? { ...prelinkedSite, country: null, depth_max_m: null } : null
+  )
   const [date, setDate] = useState(todayISO())
   const [depth, setDepth] = useState('')
   const [time, setTime] = useState('')
@@ -123,7 +263,7 @@ export function LogDivePage({ prelinkedSite }: Props) {
       const { error: dbError } = await insertDive(
         {
           userId: user.id,
-          siteId: prelinkedSite?.id ?? null,
+          siteId: selectedSite?.id ?? null,
           divedAt: date,
           maxDepthM: depthNum,
           bottomTimeMin: timeNum,
@@ -159,26 +299,17 @@ export function LogDivePage({ prelinkedSite }: Props) {
         </Link>
         <div>
           <div className="font-bold" style={{ fontSize: '17px', color: 'var(--tx)' }}>Log a dive</div>
-          {prelinkedSite && (
-            <div className="font-medium" style={{ fontSize: '11px', color: 'var(--tx3)' }}>{prelinkedSite.name}</div>
-          )}
         </div>
       </div>
 
       {/* ── Form ── */}
       <form onSubmit={handleSubmit} style={{ padding: '20px 16px 48px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
-        {/* Pre-linked site chip */}
-        {prelinkedSite && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--chip)', border: '1px solid rgba(0,180,216,0.35)', borderRadius: '10px', padding: '8px 12px' }}>
-            <svg width="12" height="12" viewBox="0 0 12 12">
-              <circle cx="6" cy="5" r="2.5" stroke="var(--acc)" strokeWidth="1.4" fill="none" />
-              <path d="M6 12 C6 12 1 7.5 1 5a5 5 0 0 1 10 0c0 2.5-5 7-5 7z" stroke="var(--acc)" strokeWidth="1.4" fill="none" />
-            </svg>
-            <span className="font-semibold" style={{ fontSize: '12px', color: 'var(--acc)' }}>{prelinkedSite.name}</span>
-            <Link href={`/sites/${prelinkedSite.slug}`} style={{ marginLeft: 'auto', fontSize: '10px', color: 'var(--tx3)', textDecoration: 'none' }}>view →</Link>
-          </div>
-        )}
+        {/* Site search */}
+        <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: '16px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div className="font-mono font-semibold" style={{ fontSize: '9px', color: 'var(--tx3)', letterSpacing: '0.12em' }}>DIVE SITE — OPTIONAL</div>
+          <SiteSearchField value={selectedSite} onChange={setSelectedSite} />
+        </div>
 
         {/* Error */}
         {error && (

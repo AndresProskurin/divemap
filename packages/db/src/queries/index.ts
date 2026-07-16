@@ -5,8 +5,9 @@ export {
   getSiteOperators,
   getSiteMarineLife,
   getTopSiteSlugs,
+  searchSites,
 } from './sites'
-export type { OperatorWithSite, MarineSpecies } from './sites'
+export type { OperatorWithSite, MarineSpecies, SiteSearchResult } from './sites'
 
 export { insertConditionsReport } from './conditions'
 export type { InsertConditionsReportInput } from './conditions'
