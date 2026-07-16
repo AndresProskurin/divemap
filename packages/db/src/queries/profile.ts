@@ -49,6 +49,25 @@ export async function getUserDives(
   return (data ?? []) as unknown as DiveWithSite[]
 }
 
+export interface UpdateProfileInput {
+  display_name?: string | null
+  bio?: string | null
+  home_country?: string | null
+  avatar_url?: string | null
+}
+
+export async function updateUserProfile(
+  userId: string,
+  input: UpdateProfileInput,
+  supabase: Client,
+): Promise<{ error: string | null }> {
+  const { error } = await supabase
+    .from('users')
+    .update({ ...input, updated_at: new Date().toISOString() })
+    .eq('id', userId)
+  return { error: error?.message ?? null }
+}
+
 export async function getUserWishlist(
   userId: string,
   supabase: Client,

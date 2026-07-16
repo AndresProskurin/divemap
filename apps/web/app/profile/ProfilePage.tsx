@@ -230,9 +230,13 @@ export function ProfilePage({ user, dives, wishlist }: Props) {
           )}
         </div>
         {/* Edit button */}
-        <div className="font-mono font-bold" style={{ fontSize: '9.5px', color: 'var(--tx2)', border: '1px solid var(--line)', borderRadius: '999px', padding: '6px 11px', letterSpacing: '0.1em', cursor: 'pointer', flexShrink: 0 }}>
+        <Link
+          href="/profile/edit"
+          className="font-mono font-bold"
+          style={{ fontSize: '9.5px', color: 'var(--tx2)', border: '1px solid var(--line)', borderRadius: '999px', padding: '6px 11px', letterSpacing: '0.1em', cursor: 'pointer', flexShrink: 0, textDecoration: 'none' }}
+        >
           EDIT
-        </div>
+        </Link>
       </div>
 
       {/* ── Stats bar ── */}

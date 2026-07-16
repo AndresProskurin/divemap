@@ -24,8 +24,8 @@ export type { MarineSpecies } from './queries/sites'
 export { insertConditionsReport } from './queries/conditions'
 export type { InsertConditionsReportInput } from './queries/conditions'
 
-export { getUserProfile, getUserDives, getUserWishlist } from './queries/profile'
-export type { DiveWithSite, WishlistSite } from './queries/profile'
+export { getUserProfile, getUserDives, getUserWishlist, updateUserProfile } from './queries/profile'
+export type { DiveWithSite, WishlistSite, UpdateProfileInput } from './queries/profile'
 
 export { insertDive } from './queries/dives'
 export type { InsertDiveInput } from './queries/dives'
