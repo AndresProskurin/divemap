@@ -21,6 +21,9 @@ export {
 } from './queries/sites'
 export type { MarineSpecies } from './queries/sites'
 
+export { insertConditionsReport } from './queries/conditions'
+export type { InsertConditionsReportInput } from './queries/conditions'
+
 import type { Enums, Tables } from './types'
 
 // ─── DOMAIN ALIASES ──────────────────────────────────────────────────────────
