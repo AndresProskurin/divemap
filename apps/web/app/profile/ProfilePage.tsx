@@ -2,7 +2,9 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import type { User, Certification, DiveWithSite, WishlistSite } from '@divemap/db'
+import { useSignIn } from '@divemap/db'
 
 type ProfileTab = 'Logbook' | 'Certifications' | 'Wishlist'
 
@@ -174,7 +176,14 @@ interface Props {
 }
 
 export function ProfilePage({ user, dives, wishlist }: Props) {
+  const router = useRouter()
+  const { signOut } = useSignIn()
   const [tab, setTab] = useState<ProfileTab>('Logbook')
+
+  async function handleSignOut() {
+    await signOut()
+    router.push('/')
+  }
 
   const displayName = user?.display_name ?? 'Diver'
   const certs = (user?.certifications as unknown as Certification[] | null) ?? []
@@ -306,6 +315,31 @@ export function ProfilePage({ user, dives, wishlist }: Props) {
           )}
         </div>
       )}
+
+      {/* ── Footer actions ── */}
+      <div style={{ margin: '24px 16px 0', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <Link
+          href="/log-dive"
+          style={{
+            display: 'block', padding: '14px', borderRadius: '14px',
+            background: 'var(--acc)', fontWeight: 700, fontSize: '14.5px',
+            color: '#02222e', textAlign: 'center', textDecoration: 'none',
+            boxShadow: '0 6px 16px rgba(0,180,216,0.3)',
+          }}
+        >
+          + Log a dive
+        </Link>
+        <button
+          onClick={handleSignOut}
+          style={{
+            padding: '13px', borderRadius: '14px', border: '1px solid var(--line)',
+            background: 'transparent', fontWeight: 600, fontSize: '13.5px',
+            color: 'var(--tx3)', cursor: 'pointer',
+          }}
+        >
+          Sign out
+        </button>
+      </div>
     </div>
   )
 }

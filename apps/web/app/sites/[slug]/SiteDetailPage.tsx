@@ -9,6 +9,7 @@ import { ConditionsTab } from './tabs/ConditionsTab'
 import { PhotosTab } from './tabs/PhotosTab'
 import { OperatorsTab } from './tabs/OperatorsTab'
 import { TechPlanTab } from './tabs/TechPlanTab'
+import { WishlistButton } from './WishlistButton'
 
 type Tab = 'Overview' | 'Conditions' | 'Photos' | 'Operators' | 'Tech'
 const TABS: Tab[] = ['Overview', 'Conditions', 'Photos', 'Operators', 'Tech']
@@ -91,23 +92,7 @@ export function SiteDetailPage({ site, conditions, photos, operators, marineLife
                 <path d="M9 2L2.5 9L9 16" stroke="#eaf6fd" strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </Link>
-            <button
-              className="flex items-center justify-center"
-              style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: '50%',
-                background: 'rgba(4,18,31,0.7)',
-                backdropFilter: 'blur(8px)',
-                border: 'none',
-                cursor: 'pointer',
-              }}
-              aria-label="Bookmark"
-            >
-              <svg width="14" height="17" viewBox="0 0 14 17">
-                <path d="M2 2h10v13l-5-3.4L2 15V2z" stroke="#eaf6fd" strokeWidth="1.8" fill="none" strokeLinejoin="round" />
-              </svg>
-            </button>
+            <WishlistButton siteId={site.id} siteSlug={site.slug} />
           </div>
           {/* Title block */}
           <div
@@ -245,19 +230,34 @@ export function SiteDetailPage({ site, conditions, photos, operators, marineLife
         className="fixed bottom-0 left-0 right-0 z-30 px-4 pb-8 pt-0"
         style={{ background: 'linear-gradient(180deg, transparent 0%, var(--bg) 42%)' }}
       >
-        <a
-          href={`/planner?site=${site.slug}&depth=${site.depth_max_m}`}
-          className="block w-full text-center font-bold rounded-14 py-4"
-          style={{
-            background: 'var(--acc)',
-            color: '#02222e',
-            fontSize: '15px',
-            textDecoration: 'none',
-            boxShadow: '0 6px 18px rgba(0,180,216,0.35)',
-          }}
-        >
-          Plan This Dive
-        </a>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <a
+            href={`/log-dive?site=${site.slug}`}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: '52px', flexShrink: 0, borderRadius: '14px', padding: '14px 0',
+              background: 'var(--card)', border: '1px solid var(--line)',
+              textDecoration: 'none',
+            }}
+            aria-label="Log a dive here"
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path d="M9 3v12M3 9h12" stroke="var(--acc)" strokeWidth="2.2" strokeLinecap="round" />
+            </svg>
+          </a>
+          <a
+            href={`/planner?site=${site.slug}&depth=${site.depth_max_m}`}
+            className="font-bold"
+            style={{
+              flex: 1, textAlign: 'center', borderRadius: '14px', padding: '15px 0',
+              background: 'var(--acc)', color: '#02222e', fontSize: '15px',
+              textDecoration: 'none', boxShadow: '0 6px 18px rgba(0,180,216,0.35)',
+              display: 'block',
+            }}
+          >
+            Plan This Dive
+          </a>
+        </div>
       </div>
     </div>
   )

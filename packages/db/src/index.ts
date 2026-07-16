@@ -30,6 +30,8 @@ export type { DiveWithSite, WishlistSite } from './queries/profile'
 export { insertDive } from './queries/dives'
 export type { InsertDiveInput } from './queries/dives'
 
+export { getWishlistItem, addToWishlist, removeFromWishlist } from './queries/wishlist'
+
 import type { Enums, Tables } from './types'
 
 // ─── DOMAIN ALIASES ──────────────────────────────────────────────────────────

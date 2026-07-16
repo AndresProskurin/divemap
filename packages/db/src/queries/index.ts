@@ -16,3 +16,5 @@ export type { DiveWithSite, WishlistSite } from './profile'
 
 export { insertDive } from './dives'
 export type { InsertDiveInput } from './dives'
+
+export { getWishlistItem, addToWishlist, removeFromWishlist } from './wishlist'
