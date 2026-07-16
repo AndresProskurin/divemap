@@ -1,7 +1,5 @@
 /**
  * @divemap/deco-engine — Bühlmann ZHL-16C with gradient factors.
- *
- * SAFETY-CRITICAL: no implementation yet. See Phase 1.
  */
 
 export type {
@@ -12,3 +10,5 @@ export type {
   GasMix,
   GradientFactors,
 } from './types'
+
+export { computeDivePlan } from './engine'

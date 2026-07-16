@@ -2,9 +2,6 @@ import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   test: {
-    // Phase 0 ships types only. Remove once the first ZHL-16C tests land so a
-    // vanished test suite fails loudly instead of passing silently.
-    passWithNoTests: true,
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
