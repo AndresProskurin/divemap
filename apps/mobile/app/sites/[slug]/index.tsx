@@ -10,7 +10,7 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter, Link } from 'expo-router'
-import { createClient, getSiteBySlug, getSiteConditions } from '@divemap/db'
+import { createClient, getSiteBySlug, getSiteConditions, getWishlistItem, addToWishlist, removeFromWishlist } from '@divemap/db'
 import type { DiveSite, ConditionsReport } from '@divemap/db'
 import { colors } from '@divemap/ui'
 
@@ -38,6 +38,9 @@ export default function SiteDetailScreen() {
   const [site, setSite] = useState<DiveSite | null>(null)
   const [conditions, setConditions] = useState<ConditionsReport[]>([])
   const [loading, setLoading] = useState(true)
+  const [wishlisted, setWishlisted] = useState(false)
+  const [wishlistId, setWishlistId] = useState<string | null>(null)
+  const [wishlistBusy, setWishlistBusy] = useState(false)
 
   useEffect(() => {
     if (!slug) return
@@ -50,9 +53,35 @@ export default function SiteDetailScreen() {
       setSite(s)
       setConditions(cond)
       setLoading(false)
+      if (s) {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          const item = await getWishlistItem(user.id, s.id, supabase)
+          if (item) { setWishlisted(true); setWishlistId(item.id) }
+        }
+      }
     }
     void load()
   }, [slug])
+
+  async function toggleWishlist() {
+    if (!site || wishlistBusy) return
+    setWishlistBusy(true)
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.push('/auth/sign-in'); return }
+      if (wishlisted && wishlistId) {
+        await removeFromWishlist(wishlistId, supabase)
+        setWishlisted(false); setWishlistId(null)
+      } else {
+        const { id } = await addToWishlist(user.id, site.id, supabase)
+        setWishlisted(true); setWishlistId(id)
+      }
+    } finally {
+      setWishlistBusy(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -80,9 +109,20 @@ export default function SiteDetailScreen() {
     <View style={[s.screen, { paddingTop: insets.top }]}>
       {/* Hero header */}
       <View style={[s.hero, { borderBottomColor: dColor }]}>
-        <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
-          <Text style={s.backBtnText}>‹</Text>
-        </TouchableOpacity>
+        <View style={s.heroNav}>
+          <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
+            <Text style={s.backBtnText}>‹</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={toggleWishlist}
+            disabled={wishlistBusy}
+            style={[s.wishBtn, wishlisted && s.wishBtnActive]}
+          >
+            <Text style={[s.wishIcon, wishlisted && { color: colors.acc }]}>
+              {wishlisted ? '♥' : '♡'}
+            </Text>
+          </TouchableOpacity>
+        </View>
         <View style={[s.typeBadge, { backgroundColor: colors.acc }]}>
           <Text style={s.typeText}>{site.type.toUpperCase()}</Text>
         </View>
@@ -191,6 +231,12 @@ const s = StyleSheet.create({
     borderBottomWidth: 3,
     gap: 4,
   },
+  heroNav: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
   backBtn: {
     width: 34,
     height: 34,
@@ -198,12 +244,30 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(8,28,48,0.8)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
   },
   backBtnText: {
     fontSize: 22,
     color: colors.tx,
     lineHeight: 26,
+  },
+  wishBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(8,28,48,0.8)',
+    borderWidth: 1,
+    borderColor: colors.line,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  wishBtnActive: {
+    borderColor: colors.acc,
+    backgroundColor: 'rgba(0,180,216,0.12)',
+  },
+  wishIcon: {
+    fontSize: 16,
+    color: colors.tx3,
+    lineHeight: 20,
   },
   typeBadge: {
     alignSelf: 'flex-start',
