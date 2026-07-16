@@ -11,6 +11,7 @@
     "mobile": "turbo run dev --filter=@divemap/mobile",
     "db:push": "turbo run db:push --filter=@divemap/db",
     "db:types": "turbo run db:types --filter=@divemap/db",
+    "seed": "tsx scripts/seed-dive-sites.ts",
     "test": "turbo run test",
     "lint": "turbo run lint",
     "build": "turbo run build",
@@ -18,6 +19,7 @@
   },
   "devDependencies": {
     "prettier": "^3.9.5",
+    "tsx": "^4.19.4",
     "turbo": "^2.10.5",
     "typescript": "^5.9.3"
   }
