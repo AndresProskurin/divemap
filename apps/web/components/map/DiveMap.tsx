@@ -32,6 +32,7 @@ export function DiveMap({ sites, onSiteClick }: DiveMapProps) {
   const mapRef       = useRef<mapboxgl.Map | null>(null)
   const clusterRef   = useRef<Supercluster | null>(null)
   const markersRef   = useRef<mapboxgl.Marker[]>([])
+  const teardownRef  = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const [selectedSite, setSelectedSite]   = useState<DiveSite | null>(null)
   const [isSatellite, setIsSatellite]     = useState(false)
@@ -128,41 +129,62 @@ export function DiveMap({ sites, onSiteClick }: DiveMapProps) {
 
   // Initialise map once.
   useEffect(() => {
+    // A pending teardown means this is StrictMode remounting us, not a real
+    // unmount — cancel it and keep the existing map (see the cleanup below).
+    if (teardownRef.current) {
+      clearTimeout(teardownRef.current)
+      teardownRef.current = null
+    }
+
     if (!containerRef.current) return
     const token = process.env['NEXT_PUBLIC_MAPBOX_TOKEN']
     if (!token) { console.error('NEXT_PUBLIC_MAPBOX_TOKEN not set'); return }
 
-    mapboxgl.accessToken = token
-    const map = new mapboxgl.Map({
-      container: containerRef.current,
-      style: MAPBOX_STYLE_DARK,
-      center: [34.9, 24.0],  // Red Sea default
-      zoom: 4,
-      attributionControl: false,
-    })
-
-    map.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-left')
-    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'bottom-right')
-
-    map.on('load', () => {
-      // Custom water colour: target fill layers whose id contains 'water' or 'ocean'.
-      const layers = map.getStyle()?.layers ?? []
-      layers.forEach((l) => {
-        if (l.type === 'fill' && (l.id.includes('water') || l.id.includes('ocean'))) {
-          try { map.setPaintProperty(l.id, 'fill-color', WATER_COLOR) } catch { /* not on this style */ }
-        }
-        if (l.type === 'background' && l.id.includes('water')) {
-          try { map.setPaintProperty(l.id, 'background-color', WATER_COLOR) } catch { /* not on this style */ }
-        }
+    if (!mapRef.current) {
+      mapboxgl.accessToken = token
+      const map = new mapboxgl.Map({
+        container: containerRef.current,
+        style: MAPBOX_STYLE_DARK,
+        center: [34.9, 24.0],  // Red Sea default
+        zoom: 4,
+        attributionControl: false,
       })
-      setMapReady(true)
-    })
 
-    map.on('moveend', renderMarkers)
-    map.on('zoomend', renderMarkers)
+      map.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-left')
+      map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'bottom-right')
 
-    mapRef.current = map
-    return () => { map.remove(); mapRef.current = null }
+      map.on('load', () => {
+        // Custom water colour: target fill layers whose id contains 'water' or 'ocean'.
+        const layers = map.getStyle()?.layers ?? []
+        layers.forEach((l) => {
+          if (l.type === 'fill' && (l.id.includes('water') || l.id.includes('ocean'))) {
+            try { map.setPaintProperty(l.id, 'fill-color', WATER_COLOR) } catch { /* not on this style */ }
+          }
+          if (l.type === 'background' && l.id.includes('water')) {
+            try { map.setPaintProperty(l.id, 'background-color', WATER_COLOR) } catch { /* not on this style */ }
+          }
+        })
+        setMapReady(true)
+      })
+
+      map.on('moveend', renderMarkers)
+      map.on('zoomend', renderMarkers)
+
+      mapRef.current = map
+    }
+
+    const map = mapRef.current
+    // Defer teardown by a tick. StrictMode runs cleanup and then re-runs this
+    // effect synchronously; removing the map inline tears down mapbox-gl's
+    // shared worker pool and the map created microseconds later never finishes
+    // loading its style — no tiles, no `load` event, so no markers ever render.
+    return () => {
+      teardownRef.current = setTimeout(() => {
+        map.remove()
+        mapRef.current = null
+        teardownRef.current = null
+      }, 0)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -194,8 +216,11 @@ export function DiveMap({ sites, onSiteClick }: DiveMapProps) {
 
   return (
     <div className="relative w-full h-full">
-      {/* Map canvas */}
-      <div ref={containerRef} className="absolute inset-0" />
+      {/* Map canvas. mapbox-gl.css sets `.mapboxgl-map { position: relative }`
+          and Next appends component CSS after globals, so it wins over
+          Tailwind's `absolute` — inset-0 alone leaves the container 0px tall.
+          Size it explicitly so the fill holds whichever rule applies. */}
+      <div ref={containerRef} className="absolute inset-0 w-full h-full" />
 
       {/* Style toggle — task 1.4 */}
       <button
