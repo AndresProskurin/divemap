@@ -204,15 +204,9 @@ code calls `dive_sites_near` at all** — it is defined but unused, so the GiST 
 
 ### 🔴 Open
 
-1. **Apply `20260721000000_storage_site_photos.sql`.** It creates the `site-photos` bucket
-   *and* the `storage.objects` policies — a public bucket alone only opens reads, so uploads
-   still fail with a policy violation without the insert policy. Not yet applied to the hosted
-   project; run `npx supabase db push` or paste it into the SQL editor.
-2. **`species_sightings` has no seed data yet.** `scripts/seed-operators-species.ts` (§8) fills
-   `operators`, `operator_sites` and `species`, but sightings need a real `user_id` —
-   the column is `not null` with an FK to `public.users`, and that table is empty until
-   someone signs up. Until then the marine-life strip on site pages and the "seen at" list
-   on `/species/[slug]` stay empty. Sign up once, then re-run the seed.
+1. **Photo upload has never been exercised end to end.** The bucket and its policies are
+   applied and the metadata table is ready, but nobody has actually pushed a file through
+   `PhotosTab` yet. First upload is the real test.
 
 ### 🟡 Missing integrations
 
@@ -440,20 +434,83 @@ SEO (static generation for site pages — `/sites/[slug]` already prerenders, `s
   previous revision said `main`; `origin/HEAD` points at `master`)
 - **Supabase project ref:** `sdinzyrebuyjrhrnqldy`
 
-⚠️ **The remote is behind the local tree.** Remote `main` is at `0e27132`
-(*"feat: [18] Error boundaries + mobile wishlist toggle"*) and does not contain: the
-`supabase/migrations/` directory, reviews (`ReviewsSection`, `queries/reviews.ts`),
-operators pages and `queries/operators.ts`, `/logbook`, `/wishlist`, `/conditions`,
-`/dives/[id]`, `/species/[slug]`, the PostHog provider, the loading states, or the
-ZH-L16C coefficient correction. Push before treating GitHub as a backup.
+⚠️ **The remote was badly behind and has now been caught up.** Before 2026-07-21 it sat at `0e27132`
+(*"feat: [18] Error boundaries + mobile wishlist toggle"*) — missing the whole
+`supabase/migrations/` directory, reviews, operators, `/logbook`, `/wishlist`,
+`/conditions`, `/dives/[id]`, `/species/[slug]`, the PostHog provider, the loading
+states and the ZH-L16C coefficient correction. All of that is pushed now. Keep it that
+way: for a solo project the remote is the only backup, and it silently rotted for days.
 
 ---
 
-## 14. Immediate Action Items
+## 14. Gotchas
 
-1. **Apply the storage migration** — photo uploads fail without it, see §6.
-2. **Sign up once, then re-run `pnpm seed:operators`** to populate `species_sightings` — see §6.
-3. **Push the local tree to GitHub** — see §13.
-4. Test the auth flow end to end: sign up → sign in → `/logbook`.
-5. Decide on `dive_sites_near`: wire it into the map's viewport query, or drop it and the index.
-6. Wire up Stripe for the premium paywall (Phase 5).
+Things that cost real debugging time here, recorded because none of them announce
+themselves clearly.
+
+### `sb_*` API keys must go in the `apikey` header, not `Authorization: Bearer`
+
+Supabase's newer key format (`sb_publishable_...`, `sb_secret_...`) is **not** a JWT.
+Anything that expects a JWT rejects it with a message that says nothing about headers:
+
+```
+{"statusCode":"403","error":"Unauthorized","message":"Invalid Compact JWS"}
+```
+
+"Invalid Compact JWS" means "this string does not have three dot-separated segments",
+i.e. it is not a JWT — not "this key is wrong". Use `apikey`:
+
+```bash
+# works
+curl "$NEXT_PUBLIC_SUPABASE_URL/storage/v1/bucket" -H "apikey: $SUPABASE_SERVICE_ROLE_KEY"
+# 403 Invalid Compact JWS
+curl "$NEXT_PUBLIC_SUPABASE_URL/storage/v1/bucket" -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY"
+```
+
+Sending both headers also works, which is why copied-from-docs snippets sometimes
+succeed and stripped-down ones do not.
+
+### Google sign-in can 400 on the first attempt, then work on a retry
+
+Observed repeatedly in a browser with ~10 Google accounts signed in: pick an account,
+Google shows a bare HTTP 400 ("Произошла ошибка") *after* the password is accepted;
+press Back, pick the **same** account again, and it goes through. A different
+signed-in account worked first time.
+
+The failing URL bounces through `accounts.google.com/ServiceLogin` with
+`continue=…/signin/oauth/consent?authuser=N`. Best-fitting explanation: that account's
+session cookie had gone stale, Google tried to refresh it via `ServiceLogin`, and the
+consent → ServiceLogin → consent chain broke — while still refreshing the session as a
+side effect, so the retry succeeds. Per-account, not per-browser: account count and
+cookie volume were ruled out by one account working while another failed in the same
+browser.
+
+**Nothing in this codebase causes it or can catch it.** The break happens entirely
+between Google's own pages; the user never reaches `/auth/callback`, so there is no
+error for the app to handle. Verified separately that the OAuth client, the registered
+redirect URI (`https://<ref>.supabase.co/auth/v1/callback`) and the consent screen are
+configured correctly.
+
+What to tell a user who reports it: **go back and try again with the same account.**
+Failing that, a private window works (single fresh session). Email + password sign-in is
+unaffected and is the reliable fallback.
+
+`signInWithOAuth` passes `prompt=select_account` ([useAuth.ts](packages/db/src/hooks/useAuth.ts)),
+which forces the account chooser instead of letting Google resolve the session silently.
+That is worth having on its own — the user always knows which account they are using —
+but be clear that **it does not prevent the 400 above**; that was tested.
+
+### Supabase redirect allowlist
+
+After Google returns, Supabase only forwards to `redirectTo` if it matches
+Authentication → URL Configuration → Redirect URLs. For local dev that needs
+`http://localhost:3000/**`. A missing entry does not error — it silently lands the user
+on Site URL, unauthenticated, which reads as "login did nothing".
+
+---
+
+## 15. Immediate Action Items
+
+1. **Upload a photo** — the one path in §6 still unproven, see §6.
+2. Decide on `dive_sites_near`: wire it into the map's viewport query, or drop it and the index.
+3. Wire up Stripe for the premium paywall (Phase 5).
