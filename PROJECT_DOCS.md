@@ -204,9 +204,8 @@ code calls `dive_sites_near` at all** — it is defined but unused, so the GiST 
 
 ### 🔴 Open
 
-1. **Photo upload has never been exercised end to end.** The bucket and its policies are
-   applied and the metadata table is ready, but nobody has actually pushed a file through
-   `PhotosTab` yet. First upload is the real test.
+Nothing. Photo upload was the last unverified path and has now been exercised end to end
+against the real bucket.
 
 ### 🟡 Missing integrations
 
@@ -500,6 +499,24 @@ which forces the account chooser instead of letting Google resolve the session s
 That is worth having on its own — the user always knows which account they are using —
 but be clear that **it does not prevent the 400 above**; that was tested.
 
+### Never run `next build` while `next dev` is running
+
+Both write to the same `apps/web/.next`. Starting a build against a live dev server
+overwrites that directory underneath it, and the dev server goes on serving HTML that
+references CSS chunks which no longer exist. The result is a page with correct markup and
+**no styling at all** — unstyled links, default form controls, white background. No error
+appears in the terminal or the browser console, so it reads as "the whole app broke".
+
+Recovery:
+
+```bash
+pkill -f "next dev"
+rm -rf apps/web/.next
+pnpm dev
+```
+
+If you need to verify a production build, stop the dev server first.
+
 ### Supabase redirect allowlist
 
 After Google returns, Supabase only forwards to `redirectTo` if it matches
@@ -511,6 +528,6 @@ on Site URL, unauthenticated, which reads as "login did nothing".
 
 ## 15. Immediate Action Items
 
-1. **Upload a photo** — the one path in §6 still unproven, see §6.
-2. Decide on `dive_sites_near`: wire it into the map's viewport query, or drop it and the index.
-3. Wire up Stripe for the premium paywall (Phase 5).
+1. Decide on `dive_sites_near`: wire it into the map's viewport query, or drop it and the index.
+2. Wire up Stripe for the premium paywall (Phase 5).
+3. Build and run the mobile app — the Expo project has never been started (§6).
