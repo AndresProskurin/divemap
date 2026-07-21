@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import type { DiveSite } from '@divemap/db'
 import { colors } from '@divemap/ui'
 
@@ -136,9 +137,11 @@ export function BottomSheet({ site, onClose }: BottomSheetProps) {
           </div>
         </div>
 
-        {/* CTA */}
-        <button
-          className="w-full text-center font-bold text-[13.5px] rounded-full py-3"
+        {/* CTA. A Link, not a button with a router.push — navigation should
+            honour cmd/middle-click and show a real href on hover. */}
+        <Link
+          href={`/sites/${site.slug}`}
+          className="block w-full text-center font-bold text-[13.5px] rounded-full py-3"
           style={{
             fontFamily: "'Archivo', sans-serif",
             background: colors.acc,
@@ -147,7 +150,7 @@ export function BottomSheet({ site, onClose }: BottomSheetProps) {
           }}
         >
           View Site
-        </button>
+        </Link>
       </div>
     </>
   )

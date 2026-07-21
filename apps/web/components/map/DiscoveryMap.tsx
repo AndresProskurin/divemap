@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
+import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import type { DiveSite } from '@divemap/db'
 import type { Enums } from '@divemap/db'
@@ -74,8 +75,10 @@ export function DiscoveryMap({ initialSites }: DiscoveryMapProps) {
         </div>
       </div>
 
-      {/* Log a Dive FAB */}
-      <button
+      {/* Log a Dive FAB. A Link, not a button with a router.push — navigation
+          should honour cmd/middle-click and show a real href on hover. */}
+      <Link
+        href="/log-dive"
         className="absolute right-4 z-20 flex items-center gap-[8px] rounded-full font-bold text-[13.5px]"
         style={{
           bottom: 'calc(env(safe-area-inset-bottom, 0px) + 120px)',
@@ -91,7 +94,7 @@ export function DiscoveryMap({ initialSites }: DiscoveryMapProps) {
           <line x1="2.5" y1="8" x2="13.5" y2="8" stroke="#02222e" strokeWidth="2.4" strokeLinecap="round"/>
         </svg>
         Log a Dive
-      </button>
+      </Link>
     </div>
   )
 }
