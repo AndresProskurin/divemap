@@ -43,6 +43,13 @@ export function useSignIn() {
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
+        // Always show the account chooser. Without this Google resolves the
+        // session implicitly and pins an `authuser` index into the consent URL;
+        // for anyone signed into several Google accounts that index can point at
+        // a stale session, and the flow dies with a bare HTTP 400 *after* the
+        // password has been accepted. Costs single-account users one extra
+        // click, which is cheaper than an unrecoverable dead end.
+        queryParams: { prompt: 'select_account' },
       },
     })
   }
