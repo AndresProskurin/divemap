@@ -77,7 +77,8 @@ divemap/
 │   └── ui/src/tokens.ts         # design tokens
 ├── supabase/migrations/         # ✅ SOURCE OF TRUTH for the schema
 │   ├── 20260716000000_initial_schema.sql
-│   └── 20260717000001_dive_reviews.sql
+│   ├── 20260717000001_dive_reviews.sql
+│   └── 20260721000000_storage_site_photos.sql
 ├── design-reference/            # DiveMap.dc.html + image assets
 └── scripts/
     ├── seed-dive-sites.ts       # dive_sites
@@ -203,9 +204,10 @@ code calls `dive_sites_near` at all** — it is defined but unused, so the GiST 
 
 ### 🔴 Open
 
-1. **Supabase Storage bucket `site-photos` must be created manually.** Dashboard → Storage →
-   New bucket → name `site-photos`, public. `PhotosTab.tsx` uploads to
-   `site-photos/{siteId}/{timestamp}.jpg` and there is no migration that creates it.
+1. **Apply `20260721000000_storage_site_photos.sql`.** It creates the `site-photos` bucket
+   *and* the `storage.objects` policies — a public bucket alone only opens reads, so uploads
+   still fail with a policy violation without the insert policy. Not yet applied to the hosted
+   project; run `npx supabase db push` or paste it into the SQL editor.
 2. **`species_sightings` has no seed data yet.** `scripts/seed-operators-species.ts` (§8) fills
    `operators`, `operator_sites` and `species`, but sightings need a real `user_id` —
    the column is `not null` with an FK to `public.users`, and that table is empty until
@@ -379,15 +381,14 @@ $EDITOR apps/web/.env.local
 SUPABASE_ACCESS_TOKEN=sbp_... npx supabase link --project-ref sdinzyrebuyjrhrnqldy
 npx supabase db push
 
-# 4. Create the site-photos storage bucket by hand — see §6
-
-# 5. Seed
+# 4. Seed — sites first, then operators/species (see §8)
 SUPABASE_SERVICE_ROLE_KEY=sb_secret_... pnpm seed
+SUPABASE_SERVICE_ROLE_KEY=sb_secret_... pnpm seed:operators
 
-# 6. Web  →  http://localhost:3000
+# 5. Web  →  http://localhost:3000
 pnpm dev
 
-# 7. Mobile, separate terminal
+# 6. Mobile, separate terminal
 cd apps/mobile && npx expo start
 ```
 
@@ -450,7 +451,7 @@ ZH-L16C coefficient correction. Push before treating GitHub as a backup.
 
 ## 14. Immediate Action Items
 
-1. **Create the `site-photos` Storage bucket** (public) — photo uploads 500 without it.
+1. **Apply the storage migration** — photo uploads fail without it, see §6.
 2. **Sign up once, then re-run `pnpm seed:operators`** to populate `species_sightings` — see §6.
 3. **Push the local tree to GitHub** — see §13.
 4. Test the auth flow end to end: sign up → sign in → `/logbook`.
