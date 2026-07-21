@@ -2,6 +2,7 @@
 
 import type { DiveSite } from '@divemap/db'
 import type { MarineSpecies } from '@divemap/db'
+import { ReviewsSection } from '../ReviewsSection'
 
 const SPECIES_COLORS = [
   '#33d6c3', '#00b4d8', '#ffb703', '#ff5d7d', '#9fc3da',
@@ -91,6 +92,8 @@ export function OverviewTab({ site, marineLife }: Props) {
           No description yet.
         </p>
       )}
+
+      <ReviewsSection siteId={site.id} />
     </div>
   )
 }

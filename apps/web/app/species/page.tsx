@@ -100,16 +100,10 @@ export default async function SpeciesPage() {
           }}
         >
           {species.map(s => (
-            <div
+            <Link
               key={s.id}
-              style={{
-                background: 'var(--card)',
-                border: '1px solid var(--line)',
-                borderRadius: '14px',
-                overflow: 'hidden',
-                display: 'flex',
-                flexDirection: 'column',
-              }}
+              href={`/species/${s.slug}`}
+              style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', background: 'var(--card)', border: '1px solid var(--line)', borderRadius: '14px', overflow: 'hidden' }}
             >
               {/* Photo / color swatch */}
               <div
@@ -156,7 +150,7 @@ export default async function SpeciesPage() {
                   </div>
                 )}
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}

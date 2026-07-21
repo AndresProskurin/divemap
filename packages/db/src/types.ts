@@ -419,6 +419,60 @@ export type Database = {
           },
         ]
       }
+      dive_reviews: {
+        Row: {
+          id: string
+          site_id: string
+          user_id: string
+          rating: number
+          viz_rating: number | null
+          current_rating: number | null
+          marine_life_rating: number | null
+          body: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          site_id: string
+          user_id: string
+          rating: number
+          viz_rating?: number | null
+          current_rating?: number | null
+          marine_life_rating?: number | null
+          body?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          site_id?: string
+          user_id?: string
+          rating?: number
+          viz_rating?: number | null
+          current_rating?: number | null
+          marine_life_rating?: number | null
+          body?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'dive_reviews_site_id_fkey'
+            columns: ['site_id']
+            isOneToOne: false
+            referencedRelation: 'dive_sites'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'dive_reviews_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       site_photos: {
         Row: {
           id: string

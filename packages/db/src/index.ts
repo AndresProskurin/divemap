@@ -34,6 +34,18 @@ export type { InsertDiveInput } from './queries/dives'
 
 export { getWishlistItem, addToWishlist, removeFromWishlist } from './queries/wishlist'
 
+export {
+  getSiteReviews,
+  getUserReviewForSite,
+  upsertSiteReview,
+  deleteSiteReview,
+  computeReviewStats,
+} from './queries/reviews'
+export type { SiteReview, SiteReviewStats, UpsertReviewInput } from './queries/reviews'
+
+export { listOperators, getOperatorBySlug, getOperatorCountries } from './queries/operators'
+export type { OperatorSiteLink, BrowseOperatorsOptions } from './queries/operators'
+
 import type { Enums, Tables } from './types'
 
 // ─── DOMAIN ALIASES ──────────────────────────────────────────────────────────

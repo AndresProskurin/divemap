@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { Archivo, IBM_Plex_Mono } from 'next/font/google'
 import './globals.css'
+import { PostHogProvider } from './PostHogProvider'
+import { PageViewTracker } from './PageViewTracker'
 
 const archivo = Archivo({
   subsets: ['latin'],
@@ -28,7 +30,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${archivo.variable} ${ibmPlexMono.variable}`}>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <PostHogProvider>
+          <PageViewTracker />
+          {children}
+        </PostHogProvider>
+      </body>
     </html>
   )
 }

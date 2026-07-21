@@ -57,12 +57,9 @@ function StatCell({ value, label, border }: { value: string; label: string; bord
 
 function LogCard({ dive }: { dive: DiveWithSite }) {
   return (
-    <div
-      style={{
-        display: 'flex', gap: '11px', alignItems: 'center',
-        border: '1px solid var(--line)', background: 'var(--card)',
-        borderRadius: '14px', padding: '10px',
-      }}
+    <Link
+      href={`/dives/${dive.id}`}
+      style={{ textDecoration: 'none', display: 'flex', gap: '11px', alignItems: 'center', border: '1px solid var(--line)', background: 'var(--card)', borderRadius: '14px', padding: '10px' }}
     >
       {/* Photo placeholder — gradient based on depth */}
       <div
@@ -94,7 +91,7 @@ function LogCard({ dive }: { dive: DiveWithSite }) {
           <span style={{ color: 'var(--acc)' }}>{gasLabel(dive.gas_o2, dive.gas_he)}</span>
         </div>
       </div>
-    </div>
+    </Link>
   )
 }
 
@@ -285,11 +282,13 @@ export function ProfilePage({ user, dives, wishlist }: Props) {
           ) : (
             <>
               {dives.map(d => <LogCard key={d.id} dive={d} />)}
-              {totalDives > dives.length && (
-                <div className="text-center font-semibold" style={{ fontSize: '12px', color: 'var(--acc)', padding: '6px 0' }}>
-                  View all {totalDives} dives →
-                </div>
-              )}
+              <Link
+                href="/logbook"
+                className="text-center font-semibold"
+                style={{ fontSize: '12px', color: 'var(--acc)', padding: '6px 0', textDecoration: 'none' }}
+              >
+                View full logbook →
+              </Link>
             </>
           )}
         </div>

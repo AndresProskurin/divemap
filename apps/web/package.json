@@ -17,6 +17,7 @@
     "@supabase/supabase-js": "^2.110.5",
     "mapbox-gl": "^3.12.0",
     "next": "14.2.35",
+    "posthog-js": "^1.403.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "supercluster": "^8.0.1"

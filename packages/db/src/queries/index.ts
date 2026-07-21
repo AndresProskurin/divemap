@@ -20,3 +20,12 @@ export { insertDive } from './dives'
 export type { InsertDiveInput } from './dives'
 
 export { getWishlistItem, addToWishlist, removeFromWishlist } from './wishlist'
+
+export {
+  getSiteReviews,
+  getUserReviewForSite,
+  upsertSiteReview,
+  deleteSiteReview,
+  computeReviewStats,
+} from './reviews'
+export type { SiteReview, SiteReviewStats, UpsertReviewInput } from './reviews'

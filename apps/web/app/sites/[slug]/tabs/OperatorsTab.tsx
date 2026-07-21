@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import type { Operator } from '@divemap/db'
 
 interface Props {
@@ -25,9 +26,12 @@ export function OperatorsTab({ operators }: Props) {
             style={{ border: '1px solid var(--line)', background: 'var(--card)' }}
           >
             <div className="flex justify-between items-center gap-2">
-              <span style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--tx)' }}>
+              <Link
+                href={`/operators/${op.slug}`}
+                style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--tx)', textDecoration: 'none' }}
+              >
                 {op.name}
-              </span>
+              </Link>
               {op.tech_certified && (
                 <span
                   className="font-mono font-bold flex-none"

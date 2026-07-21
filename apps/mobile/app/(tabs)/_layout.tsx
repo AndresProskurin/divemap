@@ -56,6 +56,15 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="conditions"
+        options={{
+          title: 'Conditions',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="water-outline" size={size ?? 22} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
