@@ -36,24 +36,28 @@ const MAX_STOP_ITER = 9_999
 
 // ── ZHL-16C Tissue Compartments ─────────────────────────────────────────────
 // Each row: [HT_N2, a_N2, b_N2, HT_He, a_He, b_He]
-// Source: Bühlmann ZHL-16C as listed in libdivecomputer / subsurface.
+// Source: Bühlmann ZH-L16C with compartment 1b, exactly as listed in
+// libdivecomputer / subsurface (core/buehlmann.c). The C revision lowers the
+// N2 a-coefficients of compartments 5-15 relative to ZH-L16A for added
+// conservatism; the b-coefficients and all He values are shared across
+// revisions.
 
 const COMPARTMENTS: ReadonlyArray<readonly [number, number, number, number, number, number]> = [
-  [  4.0, 1.2599, 0.5050,   1.51, 1.7424, 0.4245],
+  [  5.0, 1.1696, 0.5578,   1.88, 1.6189, 0.4770],
   [  8.0, 1.0000, 0.6514,   3.02, 1.3830, 0.5747],
   [ 12.5, 0.8618, 0.7222,   4.72, 1.1919, 0.6527],
   [ 18.5, 0.7562, 0.7825,   6.99, 1.0458, 0.7223],
-  [ 27.0, 0.6667, 0.8126,  10.21, 0.9220, 0.7582],
-  [ 38.3, 0.5933, 0.8434,  14.48, 0.8205, 0.7957],
-  [ 54.3, 0.5282, 0.8693,  20.53, 0.7305, 0.8279],
-  [ 77.0, 0.4701, 0.8910,  29.11, 0.6502, 0.8553],
-  [109.0, 0.4187, 0.9092,  41.20, 0.5950, 0.8757],
-  [146.0, 0.3798, 0.9222,  55.19, 0.5545, 0.8903],
-  [187.0, 0.3497, 0.9319,  70.69, 0.5333, 0.8997],
-  [239.0, 0.3223, 0.9403,  90.34, 0.5189, 0.9073],
-  [305.0, 0.2850, 0.9477, 115.29, 0.5181, 0.9122],
-  [390.0, 0.2737, 0.9544, 147.42, 0.5176, 0.9171],
-  [498.0, 0.2523, 0.9602, 188.24, 0.5172, 0.9217],
+  [ 27.0, 0.6200, 0.8126,  10.21, 0.9220, 0.7582],
+  [ 38.3, 0.5043, 0.8434,  14.48, 0.8205, 0.7957],
+  [ 54.3, 0.4410, 0.8693,  20.53, 0.7305, 0.8279],
+  [ 77.0, 0.4000, 0.8910,  29.11, 0.6502, 0.8553],
+  [109.0, 0.3750, 0.9092,  41.20, 0.5950, 0.8757],
+  [146.0, 0.3500, 0.9222,  55.19, 0.5545, 0.8903],
+  [187.0, 0.3295, 0.9319,  70.69, 0.5333, 0.8997],
+  [239.0, 0.3065, 0.9403,  90.34, 0.5189, 0.9073],
+  [305.0, 0.2835, 0.9477, 115.29, 0.5181, 0.9122],
+  [390.0, 0.2610, 0.9544, 147.42, 0.5176, 0.9171],
+  [498.0, 0.2480, 0.9602, 188.24, 0.5172, 0.9217],
   [635.0, 0.2327, 0.9653, 240.03, 0.5119, 0.9267],
 ]
 
@@ -94,13 +98,18 @@ function clone(t: Tissues): Tissues {
 }
 
 // ── Schreiner Equation ───────────────────────────────────────────────────────
-// Exact solution for constant-rate pressure change.
+// Exact solution for constant-rate pressure change (Baker, "Decolessons"):
+//   P(t) = Palv0 + R(t − 1/k) − (Palv0 − P0 − R/k)·e^(−kt)
+// Boundary checks: P(0) = P0; as t→∞, P → Palv(t) − R/k (tissue lags alveolar
+// by R/k). The sign of the R/k term inside the bracket is load-bearing — with
+// +R/k, P(0) = P0 − 2R/k, which corrupts slow compartments (1/k up to ~916
+// min) by hundreds of bar on every depth-changing segment.
 
 function schreiner(p0: number, pAlv0: number, rAlv: number, k: number, dt: number): number {
   if (Math.abs(rAlv) < 1e-10) {
     return pAlv0 + (p0 - pAlv0) * Math.exp(-k * dt)
   }
-  return pAlv0 + rAlv * (dt - 1 / k) - (pAlv0 - p0 + rAlv / k) * Math.exp(-k * dt)
+  return pAlv0 + rAlv * (dt - 1 / k) - (pAlv0 - p0 - rAlv / k) * Math.exp(-k * dt)
 }
 
 // ── Tissue Loading ───────────────────────────────────────────────────────────
@@ -137,8 +146,9 @@ function ceiling(t: Tissues, gf: number, pSurf: number): number {
     const comp = COMPARTMENTS[i]!
     const pN2 = t.n2[i]!
     const pHe = t.he[i]!
+    // pTot > 0 always: N2 starts at surface saturation (~0.75 bar) and decays
+    // exponentially toward a non-negative alveolar pressure, never reaching 0.
     const pTot = pN2 + pHe
-    if (pTot <= 0) continue
     const a = (comp[1] * pN2 + comp[4] * pHe) / pTot
     const b = (comp[2] * pN2 + comp[5] * pHe) / pTot
     const pCeil = (pTot - a * gf) / (gf / b + 1 - gf)
@@ -224,16 +234,21 @@ export function computeDivePlan(input: DivePlanInput): DivePlanResult {
   otu += otuDelta(ppO2at(depth / 2, gasMix, pSurf), descentDt)
 
   // ── Flat bottom (bottomTime is total including descent) ────────────────────
+  // Integrated in 1-minute steps so ceilingByMinute reflects the tissue state
+  // at each minute. Schreiner is exact at constant depth, so stepwise loading
+  // is numerically identical to a single segment.
   const flatDt = Math.max(0, bottomTime - descentDt)
-  loadSegment(tissues, depth, depth, flatDt, gasMix, pSurf)
-  runtime += flatDt
   const ppO2bot = ppO2at(depth, gasMix, pSurf)
-  cns += cnsDelta(ppO2bot, flatDt)
-  otu += otuDelta(ppO2bot, flatDt)
-
-  // Record ceiling per minute through bottom phase
-  for (let m = 1; m <= Math.round(runtime); m++) {
-    ceilingByMinute.push({ minute: m, ceiling: ceiling(tissues, gfHi, pSurf) })
+  ceilingByMinute.push({ minute: Math.max(1, Math.round(runtime)), ceiling: ceiling(tissues, gfHi, pSurf) })
+  let flatRemaining = flatDt
+  while (flatRemaining > 1e-9) {
+    const dt = Math.min(1, flatRemaining)
+    loadSegment(tissues, depth, depth, dt, gasMix, pSurf)
+    runtime += dt
+    cns += cnsDelta(ppO2bot, dt)
+    otu += otuDelta(ppO2bot, dt)
+    ceilingByMinute.push({ minute: Math.round(runtime), ceiling: ceiling(tissues, gfHi, pSurf) })
+    flatRemaining -= dt
   }
 
   // ── NDL check ──────────────────────────────────────────────────────────────
@@ -279,13 +294,13 @@ export function computeDivePlan(input: DivePlanInput): DivePlanResult {
 
   while (currentDepth > 0 && stopIter < MAX_STOP_ITER) {
     stopIter++
-    const pAmb = pSurf + currentDepth / 10
-    const gf = gfAt(pAmb)
-    const ceil = ceiling(tissues, gf, pSurf)
+    const nextDepth = currentDepth - STOP_STEP
+    // Baker's method: the ascent is permitted when the ceiling computed with
+    // the GF applicable at the NEXT stop clears that stop's depth.
+    const gfNext = gfAt(pSurf + nextDepth / 10)
 
-    if (ceil <= currentDepth - STOP_STEP) {
+    if (ceiling(tissues, gfNext, pSurf) <= nextDepth) {
       // Safe to ascend to the next stop.
-      const nextDepth = currentDepth - STOP_STEP
       const dt = STOP_STEP / ASCENT_RATE
       loadSegment(tissues, currentDepth, nextDepth, dt, gasMix, pSurf)
       runtime += dt
@@ -299,7 +314,8 @@ export function computeDivePlan(input: DivePlanInput): DivePlanResult {
       const ppO2stop = ppO2at(currentDepth, gasMix, pSurf)
       cns += cnsDelta(ppO2stop, 1)
       otu += otuDelta(ppO2stop, 1)
-      ceilingByMinute.push({ minute: Math.round(runtime), ceiling: ceiling(tissues, gf, pSurf) })
+      const gfHere = gfAt(pSurf + currentDepth / 10)
+      ceilingByMinute.push({ minute: Math.round(runtime), ceiling: ceiling(tissues, gfHere, pSurf) })
 
       // Accumulate into decoStops list.
       const last = decoStops[decoStops.length - 1]
