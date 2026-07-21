@@ -1,3 +1,22 @@
+-- ────────────────────────────────────────────────────────────────────────────
+-- DiveMap — full database schema.
+--
+-- GENERATED FILE — DO NOT EDIT BY HAND.
+-- Source of truth: supabase/migrations/
+-- Regenerate:     pnpm db:schema
+--
+-- Concatenation of every migration in apply order:
+--   20260716000000_initial_schema.sql
+--   20260717000001_dive_reviews.sql
+--   20260721000000_storage_site_photos.sql
+-- ────────────────────────────────────────────────────────────────────────────
+
+-- ────────────────────────────────────────────────────────────────────────────
+-- 20260716000000_initial_schema.sql
+-- ────────────────────────────────────────────────────────────────────────────
+
+set search_path to public, extensions;
+
 -- DiveMap — core Postgres schema for Supabase.
 --
 -- Apply with `pnpm db:push`, then regenerate types with `pnpm db:types`.
@@ -51,7 +70,7 @@ create or replace function public.set_updated_at()
 returns trigger
 language plpgsql
 security invoker
-set search_path = ''
+set search_path = public, extensions
 as $$
 begin
   new.updated_at = now();
@@ -110,7 +129,7 @@ create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
 security definer
-set search_path = ''
+set search_path = public, extensions
 as $$
 begin
   insert into public.users (id, email, display_name, avatar_url)
@@ -149,8 +168,8 @@ create table public.dive_sites (
   -- never drift apart.
   lat double precision not null check (lat between -90 and 90),
   lng double precision not null check (lng between -180 and 180),
-  location geography(Point, 4326)
-    generated always as (st_setsrid(st_makepoint(lng, lat), 4326)::geography) stored,
+  location extensions.geography(Point, 4326)
+    generated always as (st_setsrid(st_makepoint(lng, lat), 4326)::extensions.geography) stored,
 
   country text not null,
   region text,
@@ -219,11 +238,11 @@ create table public.operators (
 
   lat double precision check (lat between -90 and 90),
   lng double precision check (lng between -180 and 180),
-  location geography(Point, 4326)
+  location extensions.geography(Point, 4326)
     generated always as (
       case
         when lat is null or lng is null then null
-        else st_setsrid(st_makepoint(lng, lat), 4326)::geography
+        else st_setsrid(st_makepoint(lng, lat), 4326)::extensions.geography
       end
     ) stored,
 
@@ -582,6 +601,60 @@ create policy "Users can remove from their own wishlist"
   to authenticated
   using ((select auth.uid()) = user_id);
 
+-- ─── dive_reviews ────────────────────────────────────────────────────────────
+-- Star reviews for dive sites: one overall rating plus optional sub-ratings
+-- for visibility, current, and marine life. One review per user per site.
+
+create table public.dive_reviews (
+  id uuid primary key default gen_random_uuid(),
+  site_id uuid not null references public.dive_sites (id) on delete cascade,
+  user_id uuid not null references public.users (id) on delete cascade,
+
+  rating smallint not null check (rating between 1 and 5),
+  viz_rating smallint check (viz_rating between 1 and 5),
+  current_rating smallint check (current_rating between 1 and 5),
+  marine_life_rating smallint check (marine_life_rating between 1 and 5),
+  body text check (char_length(body) <= 2000),
+
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+
+  -- One review per diver per site; writing again updates the existing review.
+  unique (site_id, user_id)
+);
+
+create index dive_reviews_site_id_idx on public.dive_reviews (site_id);
+create index dive_reviews_user_id_idx on public.dive_reviews (user_id);
+-- "Latest reviews for this site" — the hot read path.
+create index dive_reviews_site_created_at_idx
+  on public.dive_reviews (site_id, created_at desc);
+
+create trigger dive_reviews_set_updated_at
+  before update on public.dive_reviews
+  for each row execute function public.set_updated_at();
+
+alter table public.dive_reviews enable row level security;
+
+create policy "Dive reviews are readable by everyone"
+  on public.dive_reviews for select
+  using (true);
+
+create policy "Users can write their own reviews"
+  on public.dive_reviews for insert
+  to authenticated
+  with check ((select auth.uid()) = user_id);
+
+create policy "Users can update their own reviews"
+  on public.dive_reviews for update
+  to authenticated
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
+
+create policy "Users can delete their own reviews"
+  on public.dive_reviews for delete
+  to authenticated
+  using ((select auth.uid()) = user_id);
+
 -- ─── GEO SEARCH ──────────────────────────────────────────────────────────────
 -- Sites within `radius_m` of a point, nearest first. Uses the GiST index on
 -- dive_sites.location. Exposed to PostgREST as rpc('dive_sites_near').
@@ -611,7 +684,7 @@ returns table (
 language sql
 stable
 security invoker
-set search_path = ''
+set search_path = public, extensions
 as $$
   select
     s.id,
@@ -627,9 +700,136 @@ as $$
     s.current_level,
     s.rating,
     s.hero_photo_url,
-    st_distance(s.location, st_setsrid(st_makepoint(in_lng, in_lat), 4326)::geography) as distance_m
+    st_distance(s.location, st_setsrid(st_makepoint(in_lng, in_lat), 4326)::extensions.geography) as distance_m
   from public.dive_sites s
-  where st_dwithin(s.location, st_setsrid(st_makepoint(in_lng, in_lat), 4326)::geography, radius_m)
-  order by s.location <-> st_setsrid(st_makepoint(in_lng, in_lat), 4326)::geography
+  where st_dwithin(s.location, st_setsrid(st_makepoint(in_lng, in_lat), 4326)::extensions.geography, radius_m)
+  order by s.location <-> st_setsrid(st_makepoint(in_lng, in_lat), 4326)::extensions.geography
   limit least(max_results, 200);
 $$;
+
+-- ────────────────────────────────────────────────────────────────────────────
+-- 20260717000001_dive_reviews.sql
+-- ────────────────────────────────────────────────────────────────────────────
+
+-- ─── dive_reviews ────────────────────────────────────────────────────────────
+-- Star reviews for dive sites: one overall rating plus optional sub-ratings
+-- for visibility, current, and marine life. One review per user per site.
+
+create table if not exists public.dive_reviews (
+  id uuid primary key default gen_random_uuid(),
+  site_id uuid not null references public.dive_sites (id) on delete cascade,
+  user_id uuid not null references public.users (id) on delete cascade,
+
+  rating smallint not null check (rating between 1 and 5),
+  viz_rating smallint check (viz_rating between 1 and 5),
+  current_rating smallint check (current_rating between 1 and 5),
+  marine_life_rating smallint check (marine_life_rating between 1 and 5),
+  body text check (char_length(body) <= 2000),
+
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+
+  -- One review per diver per site; writing again updates the existing review.
+  unique (site_id, user_id)
+);
+
+create index dive_reviews_site_id_idx on public.dive_reviews (site_id);
+create index dive_reviews_user_id_idx on public.dive_reviews (user_id);
+-- "Latest reviews for this site" — the hot read path.
+create index dive_reviews_site_created_at_idx
+  on public.dive_reviews (site_id, created_at desc);
+
+create trigger dive_reviews_set_updated_at
+  before update on public.dive_reviews
+  for each row execute function public.set_updated_at();
+
+alter table public.dive_reviews enable row level security;
+
+create policy "Dive reviews are readable by everyone"
+  on public.dive_reviews for select
+  using (true);
+
+create policy "Users can write their own reviews"
+  on public.dive_reviews for insert
+  to authenticated
+  with check ((select auth.uid()) = user_id);
+
+create policy "Users can update their own reviews"
+  on public.dive_reviews for update
+  to authenticated
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
+
+create policy "Users can delete their own reviews"
+  on public.dive_reviews for delete
+  to authenticated
+  using ((select auth.uid()) = user_id);
+
+-- ────────────────────────────────────────────────────────────────────────────
+-- 20260721000000_storage_site_photos.sql
+-- ────────────────────────────────────────────────────────────────────────────
+
+-- Storage bucket backing the Photos tab on a dive site page.
+--
+-- Until now the bucket was a manual dashboard step, so a fresh environment came
+-- up with photo uploads broken and nothing in the schema explaining why.
+--
+-- Two separate things are needed and only one of them is the bucket:
+--   * the bucket itself, and
+--   * RLS policies on storage.objects.
+-- Marking a bucket public only opens *reads* through the public URL endpoint.
+-- Uploads are INSERTs into storage.objects, where RLS is on by default, so
+-- without an insert policy every upload fails with a policy violation even
+-- though the bucket exists.
+--
+-- The policies on public.site_photos (the metadata row) are a different layer
+-- and are already defined in 20260716000000_initial_schema.sql.
+
+-- ─── BUCKET ──────────────────────────────────────────────────────────────────
+-- Limits mirror what the client actually produces: PhotosTab compresses to a
+-- 1920 px long edge and always encodes image/jpeg, so a 5 MB / jpeg-only bucket
+-- never rejects a legitimate upload but does stop arbitrary payloads going in
+-- through the storage API directly.
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('site-photos', 'site-photos', true, 5242880, array['image/jpeg'])
+on conflict (id) do update
+  set public             = excluded.public,
+      file_size_limit    = excluded.file_size_limit,
+      allowed_mime_types = excluded.allowed_mime_types;
+
+-- ─── POLICIES ────────────────────────────────────────────────────────────────
+-- Dropped first so this file can be re-run against an environment where the
+-- bucket was already wired up by hand.
+
+drop policy if exists "Authenticated users can upload site photos" on storage.objects;
+drop policy if exists "Users can delete their own site photos"     on storage.objects;
+drop policy if exists "Users can update their own site photos"     on storage.objects;
+drop policy if exists "Site photos are publicly readable"          on storage.objects;
+
+-- Any signed-in diver may add a photo to any site. Object keys are
+-- {site_id}/{timestamp}.jpg, so the usual `(storage.foldername(name))[1] =
+-- auth.uid()::text` ownership trick does not apply here — the first path
+-- segment is the site, not the uploader. Ownership is enforced on write-back
+-- instead, via storage.objects.owner, which Storage populates automatically.
+create policy "Authenticated users can upload site photos"
+  on storage.objects for insert
+  to authenticated
+  with check (bucket_id = 'site-photos');
+
+create policy "Users can update their own site photos"
+  on storage.objects for update
+  to authenticated
+  using      (bucket_id = 'site-photos' and owner = (select auth.uid()))
+  with check (bucket_id = 'site-photos' and owner = (select auth.uid()));
+
+create policy "Users can delete their own site photos"
+  on storage.objects for delete
+  to authenticated
+  using (bucket_id = 'site-photos' and owner = (select auth.uid()));
+
+-- Redundant while the bucket is public — public reads bypass RLS through the
+-- public endpoint — but required the moment `public` is flipped to false.
+create policy "Site photos are publicly readable"
+  on storage.objects for select
+  using (bucket_id = 'site-photos');

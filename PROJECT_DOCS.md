@@ -72,7 +72,7 @@ divemap/
 │   │   ├── server.ts            # SSR client, cookie-bound (anon key, NOT service role)
 │   │   ├── queries/             # all DB access lives here
 │   │   ├── hooks/useAuth.ts
-│   │   └── schema.sql           # ⚠️ STALE — see below
+│   │   └── schema.sql           # GENERATED — pnpm db:schema, never by hand
 │   ├── deco-engine/src/         # Bühlmann ZH-L16C + 41 tests
 │   └── ui/src/tokens.ts         # design tokens
 ├── supabase/migrations/         # ✅ SOURCE OF TRUTH for the schema
@@ -82,12 +82,19 @@ divemap/
 ├── design-reference/            # DiveMap.dc.html + image assets
 └── scripts/
     ├── seed-dive-sites.ts       # dive_sites
-    └── seed-operators-species.ts # operators, operator_sites, species, sightings
+    ├── seed-operators-species.ts # operators, operator_sites, species, sightings
+    └── build-schema-sql.ts      # regenerates packages/db/src/schema.sql
 ```
 
 **[was wrong]** The previous revision called `packages/db/src/schema.sql` the source of truth.
-It is a leftover from an early commit and has drifted from `supabase/migrations/`.
-Read the migrations; treat `schema.sql` as historical.
+It is not — `supabase/migrations/` is. `schema.sql` is now a **generated** single-file view
+of the whole database, produced by `pnpm db:schema`; run that after adding a migration and
+never edit it by hand.
+
+It had rotted quietly while hand-maintained: by 2026-07-21 it was missing the `dive_reviews`
+table entirely, the storage bucket and its policies, and six indexes. That is exactly the
+failure a generated artifact prevents — a second hand-written copy of the schema will always
+drift, and a stale one is worse than none because it reads as authoritative.
 
 **[was wrong]** `packages/db/src/server.ts` does *not* use the service role key.
 It builds a cookie-bound SSR client on the anon key so RLS still applies. The service role

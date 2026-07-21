@@ -11,6 +11,7 @@
     "mobile": "turbo run dev --filter=@divemap/mobile",
     "db:push": "turbo run db:push --filter=@divemap/db",
     "db:types": "turbo run db:types --filter=@divemap/db",
+    "db:schema": "tsx scripts/build-schema-sql.ts",
     "seed": "tsx scripts/seed-dive-sites.ts",
     "seed:operators": "tsx scripts/seed-operators-species.ts",
     "test": "turbo run test",
