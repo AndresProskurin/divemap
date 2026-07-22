@@ -37,6 +37,41 @@ function formatDate(iso: string) {
   })
 }
 
+/**
+ * 7-day viz trend sparkline (design screen 02). Real reports, oldest → newest
+ * left to right; hidden below two points because a one-dot trend is noise.
+ */
+function VizTrend({ reports }: { reports: ConditionsReport[] }) {
+  const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000
+  const points = reports
+    .filter((r) => new Date(r.reported_at).getTime() >= cutoff)
+    .slice(0, 12)
+    .reverse()
+  if (points.length < 2) return null
+
+  const maxViz = Math.max(...points.map((p) => p.viz_m), 1)
+  const W = 120
+  const H = 26
+  const poly = points
+    .map((p, i) => {
+      const x = (i / (points.length - 1)) * W
+      const y = H - 3 - (p.viz_m / maxViz) * (H - 8)
+      return `${x.toFixed(1)},${y.toFixed(1)}`
+    })
+    .join(' ')
+
+  return (
+    <>
+      <svg width="100%" height="26" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ marginTop: '4px' }}>
+        <polyline points={poly} fill="none" stroke="var(--acc)" strokeWidth="2" strokeLinejoin="round" />
+      </svg>
+      <span className="font-mono" style={{ fontSize: '8px', color: 'var(--tx3)', letterSpacing: '0.1em' }}>
+        7-DAY TREND
+      </span>
+    </>
+  )
+}
+
 interface Props {
   siteSlug: string
   reports: ConditionsReport[]
@@ -63,6 +98,7 @@ export function ConditionsTab({ siteSlug, reports }: Props) {
               {latest.viz_m}m
             </span>
             <VizDots vizM={latest.viz_m} />
+            <VizTrend reports={reports} />
           </div>
           <div
             className="flex-1 flex flex-col gap-[3px] rounded-14 p-[14px]"

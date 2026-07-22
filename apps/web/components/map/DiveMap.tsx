@@ -107,12 +107,25 @@ export function DiveMap({ sites, onSiteClick }: DiveMapProps) {
 
         const color  = depthColor(site.depth_max_m)
         el.style.cssText = `
+          position:relative;
           width:14px;height:14px;border-radius:50%;
           background:${color};
           border:2px solid #eaf6fd;
           box-shadow:0 0 0 6px ${color}33,0 2px 10px rgba(0,0,0,0.5);
           cursor:pointer;
         `
+        // Featured pin (design screen 01): flagship-grade sites get a pulse
+        // ring so they read as destinations, not just dots.
+        if ((site.rating ?? 0) >= 4.8) {
+          const ring = document.createElement('div')
+          ring.style.cssText = `
+            position:absolute;inset:-9px;border-radius:50%;
+            border:2px solid ${colors.acc};
+            animation:dmPulse 2.2s ease-out infinite;
+            pointer-events:none;
+          `
+          el.appendChild(ring)
+        }
         el.addEventListener('click', () => {
           setSelectedSite(site)
           onSiteClick?.(site)

@@ -47,6 +47,14 @@ Do not "fix" the peer-dependency warnings by hoisting.
 Core palette: bg `#051422` · card `#0b2438` · accent `#00b4d8` · ocean-600 `#0077b6` · ocean-700 `#023e8a`.
 Depth-band pin colours: `<20 m` teal `#33d6c3` · `20–40 m` amber `#ffb703` · `40–60 m` coral `#ef476f` · `60 m+` navy `#0077b6`.
 
+**Personas (design research, Jul 2026)** — the refreshed design canvas documents three:
+Maya the vacation diver (~60% of divers; picks sites AllTrails-style, rating first),
+Tom the local regular (dives weekly; checks viz/current before driving out, logs with wet
+hands), and Marta the technical diver (~25%, spends 46% more; judges the app by whether
+its deco numbers can be trusted). Feature priorities map accordingly: viz score and
+operators for Maya, 30-second reporting and conditions trends for Tom, the Bühlmann
+planner and insider depth beta for Marta.
+
 ---
 
 ## 3. Repo Structure

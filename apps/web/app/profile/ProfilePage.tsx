@@ -55,7 +55,7 @@ function StatCell({ value, label, border }: { value: string; label: string; bord
 
 // ── Logbook card ──────────────────────────────────────────────────────────────
 
-function LogCard({ dive }: { dive: DiveWithSite }) {
+function LogCard({ dive, badge }: { dive: DiveWithSite; badge?: string }) {
   return (
     <Link
       href={`/dives/${dive.id}`}
@@ -75,8 +75,18 @@ function LogCard({ dive }: { dive: DiveWithSite }) {
       </div>
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '3px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-          <div className="font-bold truncate" style={{ fontSize: '13.5px', color: 'var(--tx)' }}>
-            {dive.site?.name ?? 'Unknown site'}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+            <div className="font-bold truncate" style={{ fontSize: '13.5px', color: 'var(--tx)' }}>
+              {dive.site?.name ?? 'Unknown site'}
+            </div>
+            {badge && (
+              <div
+                className="font-mono font-bold flex-shrink-0"
+                style={{ fontSize: '7.5px', color: 'var(--warn)', border: '1px solid var(--warn)', borderRadius: '4px', padding: '2px 5px', letterSpacing: '0.08em' }}
+              >
+                {badge}
+              </div>
+            )}
           </div>
           <div className="font-mono flex-shrink-0" style={{ fontSize: '10px', color: 'var(--tx3)', marginLeft: '8px' }}>
             {formatDate(dive.dived_at)}
@@ -165,6 +175,65 @@ function WishCard({ item }: { item: WishlistSite }) {
 }
 
 
+
+// ── Depth spark chart (design screen 05) ─────────────────────────────────────
+// Last 24 dives by max depth, oldest → newest. Deep dives (40 m+) get the full
+// accent; the rest sit at 28% so personal bests pop.
+
+function DepthSparkChart({ dives }: { dives: DiveWithSite[] }) {
+  if (dives.length < 3) return null
+
+  const recent = dives.slice(0, 24).reverse()
+  const maxD = Math.max(...recent.map((d) => d.max_depth_m), 1)
+  const year = new Date().getFullYear()
+  const yearDives = dives.filter((d) => new Date(d.dived_at).getFullYear() === year)
+  const yearHours = Math.round(yearDives.reduce((s, d) => s + d.bottom_time_min, 0) / 60)
+  const pb = yearDives.reduce((m, d) => Math.max(m, d.max_depth_m), 0)
+
+  const first = recent[0]
+  const last = recent[recent.length - 1]
+  const monthLabel = (d: DiveWithSite) =>
+    new Date(d.dived_at).toLocaleDateString('en-US', { month: 'short' }).toUpperCase()
+
+  return (
+    <div
+      style={{
+        background: 'var(--card)', border: '1px solid var(--line)',
+        borderRadius: '16px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '8px',
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+        <span className="font-mono font-semibold" style={{ fontSize: '9px', color: 'var(--tx3)', letterSpacing: '0.12em' }}>
+          {year} · LAST {recent.length} DIVES BY DEPTH
+        </span>
+        <span className="font-mono font-semibold" style={{ fontSize: '10px', color: 'var(--acc)' }}>
+          {yearDives.length} DIVES · {yearHours} H{pb > 0 ? ` · PB ${pb}m` : ''}
+        </span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px', height: '52px' }}>
+        {recent.map((d) => (
+          <div
+            key={d.id}
+            title={`${d.max_depth_m} m`}
+            style={{
+              flex: 1,
+              height: `${Math.max(6, Math.round((d.max_depth_m / maxD) * 100))}%`,
+              background: d.max_depth_m >= 40 ? 'var(--acc)' : 'rgba(0,180,216,0.28)',
+              borderRadius: '2px 2px 0 0',
+            }}
+          />
+        ))}
+      </div>
+      {first && last && (
+        <div className="font-mono" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8px', color: 'var(--tx3)' }}>
+          <span>{monthLabel(first)}</span>
+          <span>{monthLabel(last)}</span>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Plan card ─────────────────────────────────────────────────────────────────
 
 function planGasLabel(o2: number, he: number): string {
@@ -249,6 +318,12 @@ export function ProfilePage({ user, dives, wishlist, plans: initialPlans }: Prop
 
   const { maxDepth, totalHours, countries } = computeStats(dives)
   const totalDives = user?.total_dives ?? dives.length
+
+  // "DEEPEST {year}" badge (design screen 05) — deepest dive of the current year.
+  const thisYear = new Date().getFullYear()
+  const deepestThisYear = dives
+    .filter(d => new Date(d.dived_at).getFullYear() === thisYear)
+    .reduce<DiveWithSite | null>((best, d) => (!best || d.max_depth_m > best.max_depth_m ? d : best), null)
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100dvh', paddingTop: '64px', paddingBottom: '40px' }}>
@@ -350,7 +425,14 @@ export function ProfilePage({ user, dives, wishlist, plans: initialPlans }: Prop
             <p style={{ fontSize: '13px', color: 'var(--tx3)', fontStyle: 'italic' }}>No dives logged yet.</p>
           ) : (
             <>
-              {dives.map(d => <LogCard key={d.id} dive={d} />)}
+              <DepthSparkChart dives={dives} />
+              {dives.map(d => (
+                <LogCard
+                  key={d.id}
+                  dive={d}
+                  badge={deepestThisYear?.id === d.id ? `DEEPEST ${thisYear}` : undefined}
+                />
+              ))}
               <Link
                 href="/logbook"
                 className="text-center font-semibold"

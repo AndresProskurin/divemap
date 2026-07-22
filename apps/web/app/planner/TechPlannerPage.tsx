@@ -401,6 +401,34 @@ export function TechPlannerPage() {
           >
             {mixLabel(o2Pct / 100, hePct / 100)} · ppO₂ {ppO2.toFixed(2)} bar · MOD {mod}m
           </span>
+          {/* ppO₂ gauge (design screen 03). Scale 0–1.7 bar; the colour bands
+              sit at the same thresholds the warnings fire on: 1.4 working
+              limit (amber), 1.6 hard limit (red). */}
+          <div className="flex flex-col gap-[4px]">
+            <div
+              className="relative"
+              style={{
+                height: '6px', borderRadius: '3px',
+                background: 'linear-gradient(90deg, #0f9488 0%, #0f9488 62%, #ffb703 82%, #ff5d7d 96%)',
+              }}
+            >
+              <div
+                style={{
+                  position: 'absolute', top: '-3.5px',
+                  left: `${(Math.min(ppO2 / 1.7, 1) * 100).toFixed(1)}%`,
+                  width: '3px', height: '13px', borderRadius: '2px',
+                  background: '#ffffff', boxShadow: '0 0 7px rgba(255,255,255,0.8)',
+                  transform: 'translateX(-50%)',
+                }}
+              />
+            </div>
+            <div className="relative font-mono font-semibold" style={{ height: '11px', fontSize: '8px', color: 'var(--tx3)' }}>
+              <span style={{ position: 'absolute', left: 0 }}>ppO₂</span>
+              <span style={{ position: 'absolute', left: '59%', transform: 'translateX(-50%)' }}>1.0</span>
+              <span style={{ position: 'absolute', left: '82%', transform: 'translateX(-50%)', color: 'var(--warn)' }}>1.4</span>
+              <span style={{ position: 'absolute', left: '94%', transform: 'translateX(-50%)', color: 'var(--dang)' }}>1.6</span>
+            </div>
+          </div>
         </div>
 
         {/* ── GF sliders ── */}

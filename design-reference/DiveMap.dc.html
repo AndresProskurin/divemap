@@ -20,6 +20,7 @@ a{color:#00b4d8;text-decoration:none}a:hover{color:#48cae4}
 :root{--bg:#051422;--bg2:#081c30;--card:#0b2438;--card2:#12314b;--line:rgba(148,196,230,0.14);--tx:#eaf6fd;--tx2:#9fc3da;--tx3:#638aa3;--acc:#00b4d8;--accD:#0077b6;--chip:rgba(0,180,216,0.12);--warn:#ffb703;--dang:#ff5d7d;--ok:#33d6c3;--inputbg:#08192b;--sheet:#081c30;--shadow:rgba(0,0,0,0.5)}
 @keyframes dmDraw{to{stroke-dashoffset:0}}
 @keyframes dmFade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes dmPulse{0%{transform:scale(0.55);opacity:0.9}100%{transform:scale(1.7);opacity:0}}
 input,textarea,button{font-family:inherit;color:inherit}
 input[type=range]{-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;background:var(--line);outline:none;margin:10px 0}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--acc);border:3px solid var(--bg2);box-shadow:0 1px 6px rgba(0,0,0,0.4);cursor:pointer}
@@ -33,12 +34,59 @@ input:focus,textarea:focus{outline:none;border-color:var(--acc)}
 <div style="display:flex;flex-direction:column;gap:6px;">
 <div style="font:600 12px 'IBM Plex Mono',monospace;color:#00b4d8;letter-spacing:0.22em;">DIVEMAP</div>
 <div style="font:800 30px 'Archivo',sans-serif;color:#eaf6fd;">AllTrails for scuba diving — 5 core screens</div>
-<div style="font:400 13.5px 'Archivo',sans-serif;color:#638aa3;max-width:640px;">Built by divers, for divers. Dark mode default · toggle theme and metric/imperial units in Tweaks. Screens 2–5 are interactive: tabs, live deco planner, report flow.</div>
+<div style="font:400 13.5px 'Archivo',sans-serif;color:#638aa3;max-width:640px;">Built by divers, for divers — designed around three researched personas below. Dark mode default · theme and metric/imperial units in Tweaks. Screens 2–5 are interactive.</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px;max-width:1300px;">
+<div style="font:600 11px 'IBM Plex Mono',monospace;color:#638aa3;letter-spacing:0.14em;">WHO WE'RE DESIGNING FOR · PERSONA RESEARCH, JUL 2026</div>
+<div style="display:flex;gap:16px;flex-wrap:wrap;">
+  <div style="flex:1;min-width:320px;background:#081c30;border:1px solid rgba(148,196,230,0.14);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:9px;">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;">
+      <div style="font:700 10px 'IBM Plex Mono',monospace;color:#00b4d8;letter-spacing:0.15em;">01 · THE VACATION DIVER</div>
+      <div style="font:600 10px 'IBM Plex Mono',monospace;color:#638aa3;">~60% OF DIVERS</div>
+    </div>
+    <div style="font:700 17px 'Archivo',sans-serif;color:#eaf6fd;">Maya, 34 · AOW · 47 dives</div>
+    <div style="font:400 12.5px 'Archivo',sans-serif;color:#9fc3da;line-height:1.6;">Dives one or two trips a year, books through resorts, follows a guide. Won't tolerate friction — she picks sites the way she picks trailheads on AllTrails: rating first, photo second.</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;">
+      <div style="font:600 10px 'IBM Plex Mono',monospace;color:#9fc3da;border:1px solid rgba(148,196,230,0.2);border-radius:999px;padding:5px 10px;">TRUSTWORTHY SITE PICKS</div>
+      <div style="font:600 10px 'IBM Plex Mono',monospace;color:#9fc3da;border:1px solid rgba(148,196,230,0.2);border-radius:999px;padding:5px 10px;">MARINE-LIFE SEASONS</div>
+      <div style="font:600 10px 'IBM Plex Mono',monospace;color:#9fc3da;border:1px solid rgba(148,196,230,0.2);border-radius:999px;padding:5px 10px;">VETTED OPERATORS</div>
+    </div>
+    <div style="font:600 11px 'Archivo',sans-serif;color:#638aa3;line-height:1.5;">IN THE APP → map filters &amp; viz score <a href="#s1" style="color:#00b4d8;">(01)</a> · marine life &amp; operators <a href="#s2" style="color:#00b4d8;">(02)</a> · wishlist <a href="#s5" style="color:#00b4d8;">(05)</a></div>
+  </div>
+  <div style="flex:1;min-width:320px;background:#081c30;border:1px solid rgba(148,196,230,0.14);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:9px;">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;">
+      <div style="font:700 10px 'IBM Plex Mono',monospace;color:#00b4d8;letter-spacing:0.15em;">02 · THE LOCAL REGULAR</div>
+      <div style="font:600 10px 'IBM Plex Mono',monospace;color:#638aa3;">DIVES WEEKLY</div>
+    </div>
+    <div style="font:700 17px 'Archivo',sans-serif;color:#eaf6fd;">Tom, 51 · Rescue · 640 dives</div>
+    <div style="font:400 12.5px 'Archivo',sans-serif;color:#9fc3da;line-height:1.6;">Same coastline every weekend. Checks viz and current obsessively before the drive out — a bad report saves him a wasted morning. Logs from the boat with wet hands.</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;">
+      <div style="font:600 10px 'IBM Plex Mono',monospace;color:#9fc3da;border:1px solid rgba(148,196,230,0.2);border-radius:999px;padding:5px 10px;">LIVE CONDITIONS</div>
+      <div style="font:600 10px 'IBM Plex Mono',monospace;color:#9fc3da;border:1px solid rgba(148,196,230,0.2);border-radius:999px;padding:5px 10px;">30-SECOND REPORTING</div>
+      <div style="font:600 10px 'IBM Plex Mono',monospace;color:#9fc3da;border:1px solid rgba(148,196,230,0.2);border-radius:999px;padding:5px 10px;">COMPUTER SYNC</div>
+    </div>
+    <div style="font:600 11px 'Archivo',sans-serif;color:#638aa3;line-height:1.5;">IN THE APP → conditions tab &amp; trend <a href="#s2" style="color:#00b4d8;">(02)</a> · 4-step report flow <a href="#s4" style="color:#00b4d8;">(04)</a> · sync badge <a href="#s5" style="color:#00b4d8;">(05)</a></div>
+  </div>
+  <div style="flex:1;min-width:320px;background:#081c30;border:1px solid rgba(0,180,216,0.4);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:9px;">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;">
+      <div style="font:700 10px 'IBM Plex Mono',monospace;color:#00b4d8;letter-spacing:0.15em;">03 · THE TECHNICAL DIVER</div>
+      <div style="font:600 10px 'IBM Plex Mono',monospace;color:#ffb703;">~25% · SPENDS 46% MORE</div>
+    </div>
+    <div style="font:700 17px 'Archivo',sans-serif;color:#eaf6fd;">Marta, 38 · Adv Trimix · 342 dives</div>
+    <div style="font:400 12.5px 'Archivo',sans-serif;color:#9fc3da;line-height:1.6;">Plans every dive to the minute. 94% of tech divers tune gradient factors; 79% dive Shearwater. She judges an app in ten seconds by whether its numbers can be trusted.</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;">
+      <div style="font:600 10px 'IBM Plex Mono',monospace;color:#9fc3da;border:1px solid rgba(148,196,230,0.2);border-radius:999px;padding:5px 10px;">REAL DECO MATH</div>
+      <div style="font:600 10px 'IBM Plex Mono',monospace;color:#9fc3da;border:1px solid rgba(148,196,230,0.2);border-radius:999px;padding:5px 10px;">INSIDER DEPTH BETA</div>
+      <div style="font:600 10px 'IBM Plex Mono',monospace;color:#9fc3da;border:1px solid rgba(148,196,230,0.2);border-radius:999px;padding:5px 10px;">GAS LOGISTICS</div>
+    </div>
+    <div style="font:600 11px 'Archivo',sans-serif;color:#638aa3;line-height:1.5;">IN THE APP → Bühlmann planner &amp; GF sliders <a href="#s3" style="color:#00b4d8;">(03)</a> · insider notes &amp; tech-vetted ops <a href="#s2" style="color:#00b4d8;">(02)</a></div>
+  </div>
+</div>
 </div>
 <div style="display:flex;gap:44px;align-items:flex-start;flex-wrap:wrap;">
 
 <!-- ══════════ SCREEN 1 · DISCOVERY MAP ══════════ -->
-<div data-screen-label="01 Discovery Map" style="display:flex;flex-direction:column;{{ tv }}">
+<div id="s1" data-screen-label="01 Discovery Map" style="display:flex;flex-direction:column;{{ tv }}">
 <div style="font:600 11px 'IBM Plex Mono',monospace;color:#638aa3;letter-spacing:0.14em;margin:0 0 12px 6px;">01 · DISCOVERY MAP</div>
 <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ mapFrameDark }}" hint-size="402px,874px">
 <div style="position:relative;width:100%;height:100%;min-height:820px;background:#04121f;overflow:hidden;">
@@ -46,11 +94,18 @@ input:focus,textarea:focus{outline:none;border-color:var(--acc)}
   <div style="position:absolute;inset:0;background:repeating-radial-gradient(95% 75% at 68% 24%, rgba(0,180,216,0.055) 0px, rgba(0,180,216,0.055) 1.5px, transparent 1.5px, transparent 44px);"></div>
   <div style="position:absolute;top:-90px;right:-130px;width:320px;height:360px;border-radius:46% 54% 60% 40% / 50% 45% 55% 50%;background:#0e3556;opacity:0.5;"></div>
   <div style="position:absolute;top:230px;left:-60px;width:180px;height:200px;border-radius:55% 45% 40% 60% / 45% 55% 50% 50%;background:#0c2c48;opacity:0.45;"></div>
+  <div style="position:absolute;top:158px;right:64px;font:500 8px 'IBM Plex Mono',monospace;color:rgba(159,195,218,0.4);">{{ c30 }}</div>
+  <div style="position:absolute;top:300px;left:96px;font:500 8px 'IBM Plex Mono',monospace;color:rgba(159,195,218,0.4);">{{ c70 }}</div>
   <div style="position:absolute;top:200px;right:24px;font:500 9px 'IBM Plex Mono',monospace;color:rgba(159,195,218,0.4);letter-spacing:0.3em;">RAS MUHAMMAD</div>
   <div style="position:absolute;top:420px;left:30px;font:500 9px 'IBM Plex Mono',monospace;color:rgba(159,195,218,0.35);letter-spacing:0.3em;">GULF OF AQABA</div>
   <sc-for list="{{ pins }}" as="p" hint-placeholder-count="5">
     <div style="position:absolute;left:{{ p.x }};top:{{ p.y }};transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:5px;z-index:5;">
-      <div style="width:{{ p.s }};height:{{ p.s }};border-radius:50%;background:{{ p.bg }};border:2px solid #eaf6fd;box-shadow:0 0 0 6px {{ p.ring }}, 0 2px 10px rgba(0,0,0,0.5);"></div>
+      <div style="position:relative;width:{{ p.s }};height:{{ p.s }};">
+        <sc-if value="{{ p.big }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;inset:-9px;border-radius:50%;border:2px solid #00b4d8;animation:dmPulse 2.2s ease-out infinite;"></div>
+        </sc-if>
+        <div style="width:100%;height:100%;border-radius:50%;background:{{ p.bg }};border:2px solid #eaf6fd;box-shadow:0 0 0 6px {{ p.ring }}, 0 2px 10px rgba(0,0,0,0.5);"></div>
+      </div>
       <sc-if value="{{ p.lbl }}" hint-placeholder-val="{{ false }}">
         <div style="font:600 10px 'IBM Plex Mono',monospace;color:#eaf6fd;background:rgba(4,18,31,0.85);border:1px solid rgba(148,196,230,0.2);padding:4px 8px;border-radius:7px;letter-spacing:0.04em;white-space:nowrap;">{{ p.lbl }}</div>
       </sc-if>
@@ -129,7 +184,7 @@ input:focus,textarea:focus{outline:none;border-color:var(--acc)}
 </div>
 
 <!-- ══════════ SCREEN 2 · SITE DETAIL ══════════ -->
-<div data-screen-label="02 Site Detail" style="display:flex;flex-direction:column;{{ tv }}">
+<div id="s2" data-screen-label="02 Site Detail" style="display:flex;flex-direction:column;{{ tv }}">
 <div style="font:600 11px 'IBM Plex Mono',monospace;color:#638aa3;letter-spacing:0.14em;margin:0 0 12px 6px;">02 · DIVE SITE DETAIL</div>
 <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ mapFrameDark }}" hint-size="402px,874px">
 <div style="position:relative;width:100%;height:100%;min-height:820px;background:var(--bg);overflow:hidden;">
@@ -137,6 +192,14 @@ input:focus,textarea:focus{outline:none;border-color:var(--acc)}
     <div style="position:relative;height:302px;background:#062038;">
       <image-slot id="hero-thistlegorm" shape="rect" src="images/hero.png" placeholder="hero photo — SS Thistlegorm deck gun"></image-slot>
       <div style="position:absolute;inset:0;background:linear-gradient(180deg, rgba(3,10,18,0.6) 0%, rgba(3,10,18,0) 32%, rgba(3,10,18,0) 52%, rgba(4,18,31,0.92) 100%);pointer-events:none;"></div>
+      <div style="position:absolute;top:104px;bottom:92px;right:12px;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-end;pointer-events:none;">
+        <sc-for list="{{ ruler }}" as="rt" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;gap:5px;">
+            <div style="font:600 8px 'IBM Plex Mono',monospace;color:rgba(202,240,248,0.6);text-shadow:0 1px 3px rgba(0,0,0,0.6);">{{ rt }}</div>
+            <div style="width:9px;height:1.5px;background:rgba(202,240,248,0.55);"></div>
+          </div>
+        </sc-for>
+      </div>
       <div style="position:absolute;top:58px;left:14px;right:14px;display:flex;justify-content:space-between;pointer-events:none;">
         <div style="pointer-events:auto;width:38px;height:38px;border-radius:50%;background:rgba(4,18,31,0.7);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;"><svg width="11" height="18" viewBox="0 0 11 18"><path d="M9 2L2.5 9L9 16" stroke="#eaf6fd" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
         <div style="pointer-events:auto;display:flex;gap:8px;">
@@ -198,6 +261,8 @@ input:focus,textarea:focus{outline:none;border-color:var(--acc)}
             <div style="font:600 9px 'IBM Plex Mono',monospace;color:var(--tx3);letter-spacing:0.12em;">VISIBILITY</div>
             <div style="font:700 24px 'IBM Plex Mono',monospace;color:var(--tx);">{{ condViz }}</div>
             <div style="font:600 10.5px 'Archivo',sans-serif;color:var(--ok);">▲ improving since Monday</div>
+            <svg width="100%" height="26" viewBox="0 0 120 26" preserveAspectRatio="none" style="margin-top:4px;"><polyline points="0,19 20,21 40,15 60,17 80,11 100,8 120,5" fill="none" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round"></polyline></svg>
+            <div style="font:500 8px 'IBM Plex Mono',monospace;color:var(--tx3);letter-spacing:0.1em;">7-DAY TREND</div>
           </div>
           <div style="flex:1;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:3px;">
             <div style="font:600 9px 'IBM Plex Mono',monospace;color:var(--tx3);letter-spacing:0.12em;">CURRENT</div>
@@ -275,7 +340,7 @@ input:focus,textarea:focus{outline:none;border-color:var(--acc)}
 </div>
 
 <!-- ══════════ SCREEN 3 · TECH PLANNER ══════════ -->
-<div data-screen-label="03 Tech Dive Planner" style="display:flex;flex-direction:column;{{ tv }}">
+<div id="s3" data-screen-label="03 Tech Dive Planner" style="display:flex;flex-direction:column;{{ tv }}">
 <div style="font:600 11px 'IBM Plex Mono',monospace;color:#638aa3;letter-spacing:0.14em;margin:0 0 12px 6px;">03 · TECH DIVE PLANNER — LIVE BÜHLMANN ZHL-16C</div>
 <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ isDark }}" hint-size="402px,874px">
 <div style="position:relative;width:100%;height:100%;min-height:820px;background:var(--bg);display:flex;flex-direction:column;padding-top:60px;">
@@ -308,6 +373,17 @@ input:focus,textarea:focus{outline:none;border-color:var(--acc)}
         </div>
       </div>
       <div style="font:600 10.5px 'IBM Plex Mono',monospace;color:var(--acc);letter-spacing:0.04em;">{{ mixLine }}</div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <div style="position:relative;height:6px;border-radius:3px;background:linear-gradient(90deg, #0f9488 0%, #0f9488 62%, #ffb703 82%, #ff5d7d 96%);">
+          <div style="position:absolute;top:-3.5px;left:{{ ppo2Pct }};width:3px;height:13px;border-radius:2px;background:#ffffff;box-shadow:0 0 7px rgba(255,255,255,0.8);transform:translateX(-50%);"></div>
+        </div>
+        <div style="position:relative;height:11px;font:600 8px 'IBM Plex Mono',monospace;color:var(--tx3);">
+          <span style="position:absolute;left:0;">ppO₂</span>
+          <span style="position:absolute;left:59%;transform:translateX(-50%);">1.0</span>
+          <span style="position:absolute;left:82%;transform:translateX(-50%);color:var(--warn);">1.4</span>
+          <span style="position:absolute;left:94%;transform:translateX(-50%);color:var(--dang);">1.6</span>
+        </div>
+      </div>
     </div>
     <div style="background:var(--card);border:1px solid var(--line);border-radius:16px;padding:13px;display:flex;flex-direction:column;gap:2px;">
       <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -397,7 +473,7 @@ input:focus,textarea:focus{outline:none;border-color:var(--acc)}
 </div>
 
 <!-- ══════════ SCREEN 4 · REPORT CONDITIONS ══════════ -->
-<div data-screen-label="04 Report Conditions" style="display:flex;flex-direction:column;{{ tv }}">
+<div id="s4" data-screen-label="04 Report Conditions" style="display:flex;flex-direction:column;{{ tv }}">
 <div style="font:600 11px 'IBM Plex Mono',monospace;color:#638aa3;letter-spacing:0.14em;margin:0 0 12px 6px;">04 · REPORT CONDITIONS — 4-STEP FLOW</div>
 <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ isDark }}" hint-size="402px,874px">
 <div style="position:relative;width:100%;height:100%;min-height:820px;background:var(--bg);display:flex;flex-direction:column;padding-top:60px;">
@@ -512,7 +588,7 @@ input:focus,textarea:focus{outline:none;border-color:var(--acc)}
 </div>
 
 <!-- ══════════ SCREEN 5 · PROFILE / LOGBOOK ══════════ -->
-<div data-screen-label="05 Diver Profile" style="display:flex;flex-direction:column;{{ tv }}">
+<div id="s5" data-screen-label="05 Diver Profile" style="display:flex;flex-direction:column;{{ tv }}">
 <div style="font:600 11px 'IBM Plex Mono',monospace;color:#638aa3;letter-spacing:0.14em;margin:0 0 12px 6px;">05 · DIVER PROFILE / LOGBOOK</div>
 <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ isDark }}" hint-size="402px,874px">
 <div style="position:relative;width:100%;height:100%;min-height:820px;background:var(--bg);overflow:hidden;">
@@ -547,6 +623,20 @@ input:focus,textarea:focus{outline:none;border-color:var(--acc)}
         <div style="font:600 8px 'IBM Plex Mono',monospace;color:var(--tx3);letter-spacing:0.08em;">COUNTRIES</div>
       </div>
     </div>
+    <div style="margin:10px 16px 0;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;">
+        <div style="font:600 9px 'IBM Plex Mono',monospace;color:var(--tx3);letter-spacing:0.12em;">2026 · LAST 24 DIVES BY DEPTH</div>
+        <div style="font:600 10px 'IBM Plex Mono',monospace;color:var(--acc);">{{ yearLine }}</div>
+      </div>
+      <div style="display:flex;align-items:flex-end;gap:3px;height:52px;">
+        <sc-for list="{{ spark }}" as="b" hint-placeholder-count="24">
+          <div style="flex:1;height:{{ b.h }};background:{{ b.c }};border-radius:2px 2px 0 0;"></div>
+        </sc-for>
+      </div>
+      <div style="display:flex;justify-content:space-between;font:500 8px 'IBM Plex Mono',monospace;color:var(--tx3);">
+        <span>APR</span><span>MAY</span><span>JUN</span><span>JUL</span>
+      </div>
+    </div>
     <div style="display:flex;border-bottom:1px solid var(--line);margin-top:14px;padding:0 8px;">
       <sc-for list="{{ ptabs }}" as="t" hint-placeholder-count="3">
         <div onClick="{{ t.go }}" style="padding:11px 13px;font:600 12.5px 'Archivo',sans-serif;color:{{ t.col }};border-bottom:2px solid {{ t.bd }};cursor:pointer;">{{ t.n }}</div>
@@ -558,9 +648,14 @@ input:focus,textarea:focus{outline:none;border-color:var(--acc)}
           <div style="display:flex;gap:11px;align-items:center;border:1px solid var(--line);background:var(--card);border-radius:14px;padding:10px;">
             <div style="width:56px;height:56px;flex:none;"><image-slot id="log-{{ l.img }}" shape="rounded" radius="10" src="{{ l.src }}" placeholder="photo"></image-slot></div>
             <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;">
-              <div style="display:flex;justify-content:space-between;align-items:baseline;">
-                <div style="font:700 13.5px 'Archivo',sans-serif;color:var(--tx);">{{ l.n }}</div>
-                <div style="font:500 10px 'IBM Plex Mono',monospace;color:var(--tx3);">{{ l.date }}</div>
+              <div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;">
+                <div style="display:flex;align-items:center;gap:6px;min-width:0;">
+                  <div style="font:700 13.5px 'Archivo',sans-serif;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ l.n }}</div>
+                  <sc-if value="{{ l.badge }}" hint-placeholder-val="{{ false }}">
+                    <div style="flex:none;font:700 7.5px 'IBM Plex Mono',monospace;color:var(--warn);border:1px solid var(--warn);border-radius:4px;padding:2px 5px;letter-spacing:0.08em;">{{ l.badge }}</div>
+                  </sc-if>
+                </div>
+                <div style="flex:none;font:500 10px 'IBM Plex Mono',monospace;color:var(--tx3);">{{ l.date }}</div>
               </div>
               <div style="font:500 10.5px 'Archivo',sans-serif;color:var(--tx3);">{{ l.loc }} · w/ {{ l.buddy }}</div>
               <div style="font:600 11px 'IBM Plex Mono',monospace;color:var(--tx2);">{{ l.depth }} · {{ l.time }} · <span style="color:var(--acc);">{{ l.gas }}</span></div>
@@ -740,7 +835,7 @@ class Component extends DCLogic {
       : '--bg:#eef5fa;--bg2:#ffffff;--card:#ffffff;--card2:#e8f2f9;--line:rgba(2,62,138,0.15);--tx:#0a2540;--tx2:#3f6580;--tx3:#7c9cb2;--acc:#0096c7;--accD:#023e8a;--chip:rgba(0,150,199,0.10);--warn:#b06f00;--dang:#d23359;--ok:#0f9488;--inputbg:#f2f8fc;--sheet:#ffffff;--shadow:rgba(30,60,90,0.2);';
     // ── Screen 1 data
     const pins = [
-      { x: '40%', y: '31%', s: '22px', bg: 'var(--acc)', ring: 'rgba(0,180,216,0.25)', lbl: 'Blue Hole \u00b7 ' + depR(7, 110) },
+      { x: '40%', y: '31%', s: '22px', bg: 'var(--acc)', ring: 'rgba(0,180,216,0.25)', lbl: 'Blue Hole \u00b7 ' + depR(7, 110), big: true },
       { x: '56%', y: '21%', s: '12px', bg: '#48cae4', ring: 'rgba(0,0,0,0)', lbl: '' },
       { x: '28%', y: '46%', s: '12px', bg: '#48cae4', ring: 'rgba(0,0,0,0)', lbl: '' },
       { x: '65%', y: '39%', s: '12px', bg: '#48cae4', ring: 'rgba(0,0,0,0)', lbl: '' },
@@ -837,7 +932,7 @@ class Component extends DCLogic {
       bd: S.ptab === n ? 'var(--acc)' : 'rgba(0,0,0,0)',
     }));
     const logs = [
-      { img: 'bh', src: 'images/d1.png', n: 'Blue Hole', loc: 'Dahab \u00b7 Egypt', date: 'JUL 6', depth: dep(52), time: '44 min', gas: 'TX 21/35', buddy: 'Sam R.' },
+      { img: 'bh', src: 'images/d1.png', badge: 'DEEPEST 2026', n: 'Blue Hole', loc: 'Dahab \u00b7 Egypt', date: 'JUL 6', depth: dep(52), time: '44 min', gas: 'TX 21/35', buddy: 'Sam R.' },
       { img: 'lib', src: 'images/p3.png', n: 'USAT Liberty', loc: 'Tulamben \u00b7 Bali', date: 'JUN 28', depth: dep(29), time: '54 min', gas: 'EAN32', buddy: 'Jonas M.' },
       { img: 'dg', src: 'images/p4.png', n: "Devil's Grotto", loc: 'George Town \u00b7 Grand Cayman', date: 'JUN 12', depth: dep(17), time: '61 min', gas: 'AIR', buddy: 'Ana L.' },
     ];
@@ -851,8 +946,15 @@ class Component extends DCLogic {
       { img: 'sipadan', src: 'images/p1.png', n: 'Barracuda Point', loc: 'Sipadan \u00b7 Malaysia', d: depR(5, 30) },
       { img: 'silfra', src: 'images/silfra.png', n: 'Silfra Fissure', loc: 'Thingvellir \u00b7 Iceland', d: depR(7, 18) },
     ];
+    const ruler = (isM ? [0, 10, 20, 32] : [0, 33, 66, 105]).map(v => v === 0 ? '0' : '\u2212' + v);
+    const sparkD = [18, 24, 31, 45, 22, 38, 52, 17, 29, 41, 26, 33, 48, 21, 36, 55, 19, 27, 44, 30, 24, 39, 58, 32];
+    const spark = sparkD.map(d2 => ({ h: Math.round(d2 / 60 * 100) + '%', c: d2 >= 40 ? 'var(--acc)' : 'rgba(0,180,216,0.28)' }));
+    const yearLine = '48 DIVES \u00b7 61 H \u00b7 PB ' + dep(58);
     return {
       tv, isDark, mapFrameDark: true,
+      c30: '\u2212' + cv(30) + (isM ? ' m' : ' ft'), c70: '\u2212' + cv(70) + (isM ? ' m' : ' ft'),
+      ruler, spark, yearLine,
+      ppo2Pct: (Math.min(P.ppB / 1.7, 1) * 100).toFixed(1) + '%',
       uD: isM ? 'M' : 'FT', uT: isM ? '\u00b0C' : '\u00b0F',
       // s1
       pins, chips, sites,

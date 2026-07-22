@@ -66,6 +66,30 @@ export function SiteDetailPage({ site, conditions, photos, operators, marineLife
               pointerEvents: 'none',
             }}
           />
+          {/* Depth ruler (design screen 02): 0 → −max in four ticks down the
+              right edge, so the hero reads as a water column. */}
+          <div
+            style={{
+              position: 'absolute', top: '104px', bottom: '92px', right: '12px',
+              display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+              alignItems: 'flex-end', pointerEvents: 'none',
+            }}
+          >
+            {[0, 1, 2, 3].map((i) => {
+              const depth = Math.round((site.depth_max_m / 3) * i)
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <span
+                    className="font-mono font-semibold"
+                    style={{ fontSize: '8px', color: 'rgba(202,240,248,0.6)', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}
+                  >
+                    {i === 0 ? '0' : `−${depth}`}
+                  </span>
+                  <div style={{ width: '9px', height: '1.5px', background: 'rgba(202,240,248,0.55)' }} />
+                </div>
+              )
+            })}
+          </div>
           {/* Back + Bookmark */}
           <div
             style={{

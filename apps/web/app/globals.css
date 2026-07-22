@@ -40,6 +40,12 @@ body {
   to { stroke-dashoffset: 0; }
 }
 
+/* Featured-pin pulse ring (design screen 01). */
+@keyframes dmPulse {
+  0%   { transform: scale(0.55); opacity: 0.9; }
+  100% { transform: scale(1.7);  opacity: 0; }
+}
+
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
