@@ -6,6 +6,7 @@ import type { Database } from '@divemap/db'
 import { getUserDives } from '@divemap/db'
 import type { DiveWithSite } from '@divemap/db'
 import Link from 'next/link'
+import { LogbookView } from './LogbookView'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,21 +38,6 @@ async function getData(): Promise<{ dives: DiveWithSite[] } | null> {
   } catch {
     return null
   }
-}
-
-function gasName(o2: number | null, he: number | null): string {
-  if (!o2) return 'Air'
-  const heVal = he ?? 0
-  if (heVal > 0) return `TMX ${o2}/${heVal}`
-  if (o2 > 21) return `EAN${o2}`
-  return 'Air'
-}
-
-function depthColor(m: number): string {
-  if (m < 20) return '#33d6c3'
-  if (m < 40) return '#ffb703'
-  if (m < 60) return '#ef476f'
-  return '#0077b6'
 }
 
 function StatCell({ value, unit, label }: { value: string; unit?: string; label: string }) {
@@ -146,101 +132,7 @@ export default async function LogbookPage() {
           <StatCell value={totalHours >= 10 ? String(Math.round(totalHours)) : totalHours.toFixed(1)} unit="h" label="BOTTOM TIME" />
         </div>
 
-        {/* History */}
-        {totalDives === 0 ? (
-          <div
-            style={{
-              padding: '56px 20px', textAlign: 'center',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px',
-              background: 'var(--card)', border: '1px dashed var(--line)', borderRadius: '16px',
-            }}
-          >
-            <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
-              <circle cx="22" cy="22" r="19" stroke="var(--line)" strokeWidth="1.5" />
-              <path d="M22 12v14M22 26l-5-5M22 26l5-5" stroke="var(--acc)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-              <line x1="14" y1="32" x2="30" y2="32" stroke="var(--line)" strokeWidth="1.5" strokeLinecap="round" />
-            </svg>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-              <span className="font-bold" style={{ fontSize: '15px', color: 'var(--tx)' }}>No dives logged yet</span>
-              <span className="font-medium" style={{ fontSize: '12px', color: 'var(--tx3)' }}>
-                Your logbook starts with the first entry.
-              </span>
-            </div>
-            <Link
-              href="/log-dive"
-              className="font-bold"
-              style={{
-                padding: '11px 22px', borderRadius: '12px',
-                background: 'var(--acc)', fontSize: '13px', color: '#02222e',
-                textDecoration: 'none',
-              }}
-            >
-              Log your first dive
-            </Link>
-          </div>
-        ) : (
-          Array.from(byYear.entries()).map(([year, yearDives]) => (
-            <div key={year} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                <span className="font-mono font-bold" style={{ fontSize: '13px', color: 'var(--tx)' }}>{year}</span>
-                <span className="font-mono" style={{ fontSize: '9px', color: 'var(--tx3)', letterSpacing: '0.08em' }}>
-                  {yearDives.length} {yearDives.length === 1 ? 'DIVE' : 'DIVES'}
-                </span>
-                <div style={{ flex: 1, height: '1px', background: 'var(--line)' }} />
-              </div>
-
-              {yearDives.map(dive => {
-                const dColor = depthColor(dive.max_depth_m)
-                const date = new Date(dive.dived_at)
-                return (
-                  <Link key={dive.id} href={`/dives/${dive.id}`} style={{ textDecoration: 'none', display: 'block' }}>
-                    <div
-                      style={{
-                        background: 'var(--card)', border: '1px solid var(--line)',
-                        borderRadius: '14px', padding: '11px 13px',
-                        display: 'flex', alignItems: 'center', gap: '12px',
-                      }}
-                    >
-                      {/* Depth badge */}
-                      <div
-                        style={{
-                          width: '42px', height: '42px', borderRadius: '11px', flexShrink: 0,
-                          background: `${dColor}16`, border: `1px solid ${dColor}45`,
-                          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                        }}
-                      >
-                        <span className="font-mono font-bold" style={{ fontSize: '12.5px', color: dColor, lineHeight: 1.1 }}>
-                          {dive.max_depth_m}
-                        </span>
-                        <span className="font-mono" style={{ fontSize: '7px', color: dColor, opacity: 0.75 }}>M</span>
-                      </div>
-
-                      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '8px' }}>
-                          <span className="font-bold truncate" style={{ fontSize: '13px', color: 'var(--tx)' }}>
-                            {dive.site?.name ?? 'Unknown site'}
-                          </span>
-                          <span className="font-mono flex-shrink-0" style={{ fontSize: '9.5px', color: 'var(--tx3)' }}>
-                            {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                          </span>
-                        </div>
-                        <span className="font-mono font-semibold" style={{ fontSize: '10.5px', color: 'var(--tx2)' }}>
-                          {dive.bottom_time_min} min ·{' '}
-                          <span style={{ color: 'var(--acc)' }}>{gasName(dive.gas_o2, dive.gas_he)}</span>
-                          {dive.buddy && <span style={{ color: 'var(--tx3)' }}> · w/ {dive.buddy}</span>}
-                        </span>
-                      </div>
-
-                      <svg width="6" height="10" viewBox="0 0 6 10" fill="none" style={{ flexShrink: 0 }}>
-                        <path d="M1 1l4 4-4 4" stroke="var(--tx3)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </div>
-                  </Link>
-                )
-              })}
-            </div>
-          ))
-        )}
+        <LogbookView dives={dives} />
       </div>
     </div>
   )
