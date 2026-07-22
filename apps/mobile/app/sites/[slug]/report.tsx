@@ -11,7 +11,8 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { createClient, insertConditionsReport } from '@divemap/db'
+import { insertConditionsReport } from '@divemap/db'
+import { createClient } from '../../../lib/supabase'
 import { colors } from '@divemap/ui'
 
 type Step = 1 | 2 | 3 | 'done'

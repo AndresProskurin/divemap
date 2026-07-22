@@ -10,7 +10,8 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter, Link } from 'expo-router'
-import { createClient, getSiteBySlug, getSiteConditions, getWishlistItem, addToWishlist, removeFromWishlist } from '@divemap/db'
+import { getSiteBySlug, getSiteConditions, getWishlistItem, addToWishlist, removeFromWishlist } from '@divemap/db'
+import { createClient } from '../../../lib/supabase'
 import type { DiveSite, ConditionsReport } from '@divemap/db'
 import { colors } from '@divemap/ui'
 

@@ -12,7 +12,7 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter, Link } from 'expo-router'
-import { createClient } from '@divemap/db'
+import { createClient } from '../../lib/supabase'
 import { colors } from '@divemap/ui'
 
 export default function SignUpScreen() {

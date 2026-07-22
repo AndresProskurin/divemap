@@ -11,7 +11,8 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
-import { createClient, insertDive } from '@divemap/db'
+import { insertDive } from '@divemap/db'
+import { createClient } from '../../lib/supabase'
 import { colors } from '@divemap/ui'
 
 function todayISO(): string {

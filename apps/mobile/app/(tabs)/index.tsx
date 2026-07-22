@@ -11,7 +11,7 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Link } from 'expo-router'
-import { createClient } from '@divemap/db'
+import { createClient } from '../../lib/supabase'
 import type { SiteListItem } from '@divemap/db'
 import { browseSites } from '@divemap/db'
 import { colors } from '@divemap/ui'
