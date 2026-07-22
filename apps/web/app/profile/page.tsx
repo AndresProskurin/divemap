@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { createServerClient } from '@supabase/ssr'
 import type { Metadata } from 'next'
 import type { Database } from '@divemap/db'
-import { getUserProfile, getUserDives, getUserWishlist } from '@divemap/db'
+import { getUserProfile, getUserDives, getUserWishlist, getUserPlans } from '@divemap/db'
 import { ProfilePage } from './ProfilePage'
 
 export const dynamic = 'force-dynamic'
@@ -38,10 +38,11 @@ export default async function ProfileRoute() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/')
 
-  const [profile, dives, wishlist] = await Promise.all([
+  const [profile, dives, wishlist, plans] = await Promise.all([
     getUserProfile(user.id, supabase),
     getUserDives(user.id, supabase, 20),
     getUserWishlist(user.id, supabase),
+    getUserPlans(user.id, supabase),
   ])
 
   return (
@@ -49,6 +50,7 @@ export default async function ProfileRoute() {
       user={profile}
       dives={dives}
       wishlist={wishlist}
+      plans={plans}
     />
   )
 }

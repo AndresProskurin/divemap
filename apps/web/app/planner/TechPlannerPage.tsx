@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { computeDivePlan } from '@divemap/deco-engine'
 import type { GasMix, DivePlanResult } from '@divemap/deco-engine'
+import { createClient, insertPlan, useAuth } from '@divemap/db'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -175,14 +176,30 @@ export function TechPlannerPage() {
   const params = useSearchParams()
   const siteSlug = params.get('site') ?? null
   const initialDepth = Math.min(150, Math.max(5, parseInt(params.get('depth') ?? '40', 10)))
+  // Saved-plan prefill: /planner?depth=…&time=…&o2=…&he=…&gflo=…&gfhi=…
+  // The engine recomputes from these inputs; nothing else is restored.
+  const intParam = (key: string, fallback: number, lo: number, hi: number) => {
+    const raw = parseInt(params.get(key) ?? '', 10)
+    return Number.isNaN(raw) ? fallback : Math.min(hi, Math.max(lo, raw))
+  }
 
   const [depth, setDepth] = useState(initialDepth)
-  const [bottomTime, setBottomTime] = useState(30)
-  const [o2Pct, setO2Pct] = useState(21)
-  const [hePct, setHePct] = useState(0)
-  const [gfLo, setGfLo] = useState(40)
-  const [gfHi, setGfHi] = useState(85)
+  const [bottomTime, setBottomTime] = useState(() => intParam('time', 30, 1, 300))
+  const [o2Pct, setO2Pct] = useState(() => intParam('o2', 21, 5, 100))
+  const [hePct, setHePct] = useState(() => intParam('he', 0, 0, 95))
+  const [gfLo, setGfLo] = useState(() => intParam('gflo', 40, 10, 100))
+  const [gfHi, setGfHi] = useState(() => intParam('gfhi', 85, 10, 100))
   const [decoGases, setDecoGases] = useState<DecoGas[]>([])
+
+  // ── Save plan ─────────────────────────────────────────────────────────────
+
+  const { user } = useAuth()
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+
+  // Any input change invalidates the previous "Saved ✓".
+  useEffect(() => {
+    setSaveState((s) => (s === 'saved' ? 'idle' : s))
+  }, [depth, bottomTime, o2Pct, hePct, gfLo, gfHi, decoGases])
 
   // Clamp gas fractions on change
   const handleO2 = useCallback((v: number) => setO2Pct(Math.min(100 - hePct, v)), [hePct])
@@ -233,6 +250,48 @@ export function TechPlannerPage() {
   const availablePresets = PRESET_DECO_GASES.filter(
     (g) => !decoGases.some((d) => d.label === g.label)
   )
+
+  const handleSavePlan = useCallback(async () => {
+    if (!user || saveState === 'saving') return
+    setSaveState('saving')
+    try {
+      const supabase = createClient()
+      // Plans store site_id, but the planner only carries the slug from the
+      // "Plan This Dive" link — resolve it here; a plan without a site is fine.
+      let siteId: string | null = null
+      let siteName: string | null = null
+      if (siteSlug) {
+        const { data } = await supabase
+          .from('dive_sites')
+          .select('id, name')
+          .eq('slug', siteSlug)
+          .single()
+        siteId = data?.id ?? null
+        siteName = data?.name ?? null
+      }
+      const res = await insertPlan(
+        {
+          user_id: user.id,
+          site_id: siteId,
+          name: `${siteName ?? mixLabel(o2Pct / 100, hePct / 100)} · ${depth}m / ${bottomTime}min`,
+          depth_m: depth,
+          bottom_time_min: bottomTime,
+          gas_o2: o2Pct / 100,
+          gas_he: hePct / 100,
+          gf_lo: gfLo,
+          gf_hi: gfHi,
+          deco_gases: decoGases.map((g) => ({ fO2: g.fO2, fHe: g.fHe })),
+          runtime_min: result.totalRuntime,
+          tts_min: tts,
+          stop_count: result.decoStops.length,
+        },
+        supabase,
+      )
+      setSaveState('error' in res ? 'error' : 'saved')
+    } catch {
+      setSaveState('error')
+    }
+  }, [user, saveState, siteSlug, depth, bottomTime, o2Pct, hePct, gfLo, gfHi, decoGases, result, tts])
 
   // ── SVG Profile ───────────────────────────────────────────────────────────
 
@@ -285,6 +344,41 @@ export function TechPlannerPage() {
         >
           OC · ZHL-16C
         </span>
+        {saveState === 'saved' ? (
+          <Link
+            href="/profile"
+            className="font-mono font-bold"
+            style={{
+              fontSize: '9px',
+              color: 'var(--ok)',
+              border: '1px solid var(--ok)',
+              borderRadius: '6px',
+              padding: '4px 7px',
+              letterSpacing: '0.1em',
+            }}
+          >
+            SAVED ✓
+          </Link>
+        ) : (
+          <button
+            onClick={handleSavePlan}
+            disabled={saveState === 'saving'}
+            className="font-mono font-bold"
+            style={{
+              fontSize: '9px',
+              color: saveState === 'error' ? 'var(--dang)' : '#02222e',
+              background: saveState === 'error' ? 'transparent' : 'var(--acc)',
+              border: saveState === 'error' ? '1px solid var(--dang)' : '1px solid var(--acc)',
+              borderRadius: '6px',
+              padding: '4px 7px',
+              letterSpacing: '0.1em',
+              cursor: saveState === 'saving' ? 'default' : 'pointer',
+              opacity: saveState === 'saving' ? 0.6 : 1,
+            }}
+          >
+            {saveState === 'saving' ? 'SAVING…' : saveState === 'error' ? 'RETRY SAVE' : 'SAVE PLAN'}
+          </button>
+        )}
       </div>
 
       {/* ── Scrollable content ── */}

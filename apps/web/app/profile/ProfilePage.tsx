@@ -3,10 +3,10 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import type { User, Certification, DiveWithSite, WishlistSite } from '@divemap/db'
-import { useSignIn } from '@divemap/db'
+import type { User, Certification, DiveWithSite, WishlistSite, DivePlanWithSite } from '@divemap/db'
+import { createClient, deletePlan, useSignIn } from '@divemap/db'
 
-type ProfileTab = 'Logbook' | 'Certifications' | 'Wishlist'
+type ProfileTab = 'Logbook' | 'Dive Plans' | 'Certifications' | 'Wishlist'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -164,18 +164,78 @@ function WishCard({ item }: { item: WishlistSite }) {
   )
 }
 
+
+// ── Plan card ─────────────────────────────────────────────────────────────────
+
+function planGasLabel(o2: number, he: number): string {
+  const pO2 = Math.round(o2 * 100)
+  const pHe = Math.round(he * 100)
+  if (pHe > 0) return `TMX ${pO2}/${pHe}`
+  if (pO2 === 21) return 'Air'
+  return `EAN${pO2}`
+}
+
+function PlanCard({ plan, onDelete }: { plan: DivePlanWithSite; onDelete: () => void }) {
+  const href =
+    `/planner?depth=${plan.depth_m}&time=${plan.bottom_time_min}` +
+    `&o2=${Math.round(plan.gas_o2 * 100)}&he=${Math.round(plan.gas_he * 100)}` +
+    `&gflo=${plan.gf_lo}&gfhi=${plan.gf_hi}` +
+    (plan.site ? `&site=${plan.site.slug}` : '')
+  return (
+    <div
+      style={{
+        display: 'flex', alignItems: 'center', gap: '11px',
+        border: '1px solid var(--line)', borderRadius: '14px',
+        background: 'var(--card)', padding: '11px 13px',
+      }}
+    >
+      <Link href={href} style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '3px', textDecoration: 'none' }}>
+        <span className="font-bold" style={{ fontSize: '13.5px', color: 'var(--tx)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {plan.name}
+        </span>
+        <span className="font-mono font-semibold" style={{ fontSize: '10.5px', color: 'var(--tx2)' }}>
+          {plan.depth_m}m · {plan.bottom_time_min}min · {planGasLabel(plan.gas_o2, plan.gas_he)} · GF {plan.gf_lo}/{plan.gf_hi}
+        </span>
+        <span className="font-mono" style={{ fontSize: '9.5px', color: 'var(--tx3)', letterSpacing: '0.06em' }}>
+          {plan.runtime_min != null ? `RUNTIME ${plan.runtime_min} MIN` : ''}
+          {plan.stop_count != null ? ` · ${plan.stop_count} STOPS` : ''}
+          {' · '}{formatDate(plan.created_at)}
+        </span>
+      </Link>
+      <button
+        onClick={onDelete}
+        aria-label="Delete plan"
+        style={{
+          flexShrink: 0, width: '28px', height: '28px', borderRadius: '50%',
+          border: '1px solid var(--line)', background: 'transparent',
+          color: 'var(--tx3)', fontSize: '14px', lineHeight: 1, cursor: 'pointer',
+        }}
+      >
+        ×
+      </button>
+    </div>
+  )
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 interface Props {
   user: User | null
   dives: DiveWithSite[]
   wishlist: WishlistSite[]
+  plans: DivePlanWithSite[]
 }
 
-export function ProfilePage({ user, dives, wishlist }: Props) {
+export function ProfilePage({ user, dives, wishlist, plans: initialPlans }: Props) {
   const router = useRouter()
   const { signOut } = useSignIn()
   const [tab, setTab] = useState<ProfileTab>('Logbook')
+  const [plans, setPlans] = useState(initialPlans)
+
+  async function handleDeletePlan(id: string) {
+    setPlans((prev) => prev.filter((p) => p.id !== id))
+    await deletePlan(id, createClient())
+  }
 
   async function handleSignOut() {
     await signOut()
@@ -214,6 +274,15 @@ export function ProfilePage({ user, dives, wishlist }: Props) {
         {/* Name + subtitle + sync */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
           <div className="font-extrabold" style={{ fontSize: '19px', color: 'var(--tx)' }}>{displayName}</div>
+          {user?.username && (
+            <Link
+              href={`/profile/${user.username}`}
+              className="font-mono font-semibold"
+              style={{ fontSize: '10px', color: 'var(--acc)', letterSpacing: '0.04em', textDecoration: 'none' }}
+            >
+              @{user.username} · view public profile →
+            </Link>
+          )}
           {subtitle && (
             <div className="font-medium" style={{ fontSize: '11.5px', color: 'var(--tx3)' }}>{subtitle}</div>
           )}
@@ -252,7 +321,7 @@ export function ProfilePage({ user, dives, wishlist }: Props) {
 
       {/* ── Tab bar ── */}
       <div style={{ display: 'flex', borderBottom: '1px solid var(--line)', marginTop: '14px', padding: '0 8px' }}>
-        {(['Logbook', 'Certifications', 'Wishlist'] as const).map(t => (
+        {(['Logbook', 'Dive Plans', 'Certifications', 'Wishlist'] as const).map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -290,6 +359,19 @@ export function ProfilePage({ user, dives, wishlist }: Props) {
                 View full logbook →
               </Link>
             </>
+          )}
+        </div>
+      )}
+
+      {/* Dive Plans */}
+      {tab === 'Dive Plans' && (
+        <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '9px', animation: 'dmFade 0.25s ease' }}>
+          {plans.length === 0 ? (
+            <p style={{ fontSize: '13px', color: 'var(--tx3)', fontStyle: 'italic' }}>
+              No saved plans yet — build one in the <Link href="/planner" style={{ color: 'var(--acc)' }}>Tech Planner</Link>.
+            </p>
+          ) : (
+            plans.map(pl => <PlanCard key={pl.id} plan={pl} onDelete={() => handleDeletePlan(pl.id)} />)
           )}
         </div>
       )}
