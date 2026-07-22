@@ -16,31 +16,40 @@ alter table public.users
 
 -- Backfill: slugified display_name (or email local part). First taker of a
 -- slug keeps it bare; collisions and reserved words get a short id suffix.
-with base as (
+--
+-- NB on the clamping: rpad(s, 3) TRUNCATES strings longer than 3 — it is not a
+-- min-length pad. The first revision of this migration used it that way and
+-- collapsed every user to a 3-char slug ('andy_pros' → 'and'), so the backfill
+-- died on the unique constraint. Pad only when short, clamp only when long,
+-- and rank over the FINAL slug so the partition can never disagree with the
+-- value actually assigned.
+with raw as (
   select
     id,
-    -- Slugify, clamp to the check constraint: 3–24 chars of [a-z0-9_].
-    substr(
-      rpad(
-        regexp_replace(lower(coalesce(display_name, split_part(email, '@', 1))), '[^a-z0-9_]+', '_', 'g'),
-        3, '_'
-      ),
-      1, 20
-    ) as slug,
-    row_number() over (
-      partition by regexp_replace(lower(coalesce(display_name, split_part(email, '@', 1))), '[^a-z0-9_]+', '_', 'g')
-      order by created_at
-    ) as rn
+    created_at,
+    regexp_replace(lower(coalesce(display_name, split_part(email, '@', 1))), '[^a-z0-9_]+', '_', 'g') as r
   from public.users
   where username is null
+),
+base as (
+  select
+    id,
+    created_at,
+    -- Clamp to the check constraint: 3–24 chars of [a-z0-9_].
+    case when length(r) < 3 then rpad(r, 3, '_') else substr(r, 1, 20) end as slug
+  from raw
+),
+ranked as (
+  select id, slug, row_number() over (partition by slug order by created_at) as rn
+  from base
 )
 update public.users u
 set username = case
-  when base.rn = 1 and base.slug not in ('edit', 'plans', 'settings') then base.slug
-  else substr(base.slug, 1, 19) || '_' || substr(replace(u.id::text, '-', ''), 1, 4)
+  when ranked.rn = 1 and ranked.slug not in ('edit', 'plans', 'settings') then ranked.slug
+  else substr(ranked.slug, 1, 19) || '_' || substr(replace(u.id::text, '-', ''), 1, 4)
 end
-from base
-where u.id = base.id;
+from ranked
+where u.id = ranked.id;
 
 -- New signups: same slugification, suffixed with a short id fragment so the
 -- insert can never fail on a duplicate and never trips the reserved list.
@@ -61,12 +70,13 @@ begin
       split_part(new.email, '@', 1)
     ),
     new.raw_user_meta_data ->> 'avatar_url',
-    substr(
-      rpad(
-        regexp_replace(lower(split_part(new.email, '@', 1)), '[^a-z0-9_]+', '_', 'g'),
-        3, '_'
-      ),
-      1, 16
+    -- Pad only when short (rpad truncates long strings — see the backfill
+    -- comment), clamp to 16 so the id suffix keeps the total within 24.
+    (
+      select case when length(s) < 3 then rpad(s, 3, '_') else substr(s, 1, 16) end
+      from (
+        select regexp_replace(lower(split_part(new.email, '@', 1)), '[^a-z0-9_]+', '_', 'g') as s
+      ) t
     ) || '_' || substr(replace(new.id::text, '-', ''), 1, 4)
   )
   on conflict (id) do nothing;
