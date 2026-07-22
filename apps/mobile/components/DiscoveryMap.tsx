@@ -7,7 +7,7 @@
  */
 
 import { useMemo, useRef } from 'react'
-import { StyleSheet, View, Text } from 'react-native'
+import { StyleSheet, View, Text, TouchableOpacity } from 'react-native'
 import Mapbox, {
   MapView,
   Camera,
@@ -32,6 +32,12 @@ interface Props {
 export function DiscoveryMap({ sites }: Props) {
   const router = useRouter()
   const cameraRef = useRef<Camera>(null)
+  const mapRef = useRef<MapView>(null)
+
+  async function zoomBy(delta: number) {
+    const z = (await mapRef.current?.getZoom()) ?? 3
+    cameraRef.current?.zoomTo(Math.min(16, Math.max(1, z + delta)), 250)
+  }
 
   const collection = useMemo(
     () => ({
@@ -61,11 +67,16 @@ export function DiscoveryMap({ sites }: Props) {
   return (
     <View style={s.wrap}>
       <MapView
+        ref={mapRef}
         style={s.map}
         styleURL="mapbox://styles/mapbox/dark-v11"
         logoEnabled={false}
         attributionPosition={{ bottom: 4, left: 4 }}
         scaleBarEnabled={false}
+        // Pan + pinch/double-tap zoom only: accidental rotation and tilt are
+        // what makes a small embedded map feel broken.
+        rotateEnabled={false}
+        pitchEnabled={false}
       >
         <Camera
           ref={cameraRef}
@@ -134,6 +145,26 @@ export function DiscoveryMap({ sites }: Props) {
           />
         </ShapeSource>
       </MapView>
+
+      {/* Zoom controls — pinch works on device (Option+drag in the
+          Simulator), but visible buttons match the web map's affordance. */}
+      <View style={s.zoomControls}>
+        <TouchableOpacity style={s.zoomBtn} onPress={() => zoomBy(1)} accessibilityLabel="Zoom in">
+          <Text style={s.zoomBtnText}>+</Text>
+        </TouchableOpacity>
+        <View style={s.zoomDivider} />
+        <TouchableOpacity style={s.zoomBtn} onPress={() => zoomBy(-1)} accessibilityLabel="Zoom out">
+          <Text style={s.zoomBtnText}>−</Text>
+        </TouchableOpacity>
+        <View style={s.zoomDivider} />
+        <TouchableOpacity
+          style={s.zoomBtn}
+          onPress={() => cameraRef.current?.setCamera({ centerCoordinate: [34.9, 24.0], zoomLevel: 3, animationDuration: 600 })}
+          accessibilityLabel="Reset view"
+        >
+          <Text style={[s.zoomBtnText, { fontSize: 13 }]}>◎</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   )
 }
@@ -150,6 +181,15 @@ const s = StyleSheet.create({
     borderColor: colors.line,
   },
   map: { flex: 1 },
+  zoomControls: {
+    position: 'absolute', right: 10, top: 10,
+    backgroundColor: 'rgba(6,24,40,0.88)',
+    borderWidth: 1, borderColor: colors.line,
+    borderRadius: 12, overflow: 'hidden',
+  },
+  zoomBtn: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' },
+  zoomBtnText: { fontSize: 20, color: colors.tx2, lineHeight: 22 },
+  zoomDivider: { height: 1, backgroundColor: colors.line },
   fallback: {
     marginHorizontal: 14,
     height: 300,
