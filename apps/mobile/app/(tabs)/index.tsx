@@ -12,8 +12,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Link } from 'expo-router'
 import { createClient } from '../../lib/supabase'
-import type { SiteListItem } from '@divemap/db'
-import { browseSites } from '@divemap/db'
+import type { SiteListItem, MapSite } from '@divemap/db'
+import { browseSites, getMapSites } from '@divemap/db'
+import { DiscoveryMap } from '../../components/DiscoveryMap'
 import { colors } from '@divemap/ui'
 
 const TYPES = ['reef', 'wreck', 'wall', 'cave', 'cenote', 'drift', 'muck'] as const
@@ -64,8 +65,18 @@ export default function DiscoverScreen() {
   const [query, setQuery] = useState('')
   const [activeType, setActiveType] = useState<string | null>(null)
   const [sites, setSites] = useState<SiteListItem[]>([])
+  const [mapSites, setMapSites] = useState<MapSite[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
+
+  // Map pins load once — the map shows the whole catalogue, not the filter.
+  useEffect(() => {
+    let cancelled = false
+    getMapSites(createClient()).then((rows) => {
+      if (!cancelled) setMapSites(rows)
+    })
+    return () => { cancelled = true }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -129,11 +140,8 @@ export default function DiscoverScreen() {
         })}
       </ScrollView>
 
-      {/* Map placeholder */}
-      <View style={s.mapPlaceholder}>
-        <Text style={s.mapPlaceholderLabel}>🗺 MAP</Text>
-        <Text style={s.mapPlaceholderNote}>Mapbox integration — add @rnmapbox/maps</Text>
-      </View>
+      {/* Native Mapbox map */}
+      <DiscoveryMap sites={mapSites} />
 
       {/* Site list label */}
       <View style={s.listHeader}>
@@ -226,25 +234,6 @@ const s = StyleSheet.create({
   },
   chipTextActive: {
     color: colors.acc,
-  },
-  mapPlaceholder: {
-    marginHorizontal: 14,
-    height: 180,
-    borderRadius: 16,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.line,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  mapPlaceholderLabel: {
-    fontSize: 28,
-  },
-  mapPlaceholderNote: {
-    fontSize: 11,
-    color: colors.tx3,
-    fontWeight: '500',
   },
   listHeader: {
     flexDirection: 'row',

@@ -157,3 +157,25 @@ export async function searchSites(
     .limit(limit)
   return (data ?? []) as SiteSearchResult[]
 }
+
+// ─── Map pins ────────────────────────────────────────────────────────────────
+
+export interface MapSite {
+  id: string
+  slug: string
+  name: string
+  lat: number
+  lng: number
+  depth_max_m: number | null
+  rating: number | null
+}
+
+/** Lightweight coordinate set for map rendering; capped, best-rated first. */
+export async function getMapSites(supabase: Client, limit = 1000): Promise<MapSite[]> {
+  const { data } = await supabase
+    .from('dive_sites')
+    .select('id, slug, name, lat, lng, depth_max_m, rating')
+    .order('rating', { ascending: false, nullsFirst: false })
+    .limit(limit)
+  return (data ?? []) as MapSite[]
+}

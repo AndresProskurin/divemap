@@ -30,6 +30,8 @@ export {
 } from './reviews'
 export type { SiteReview, SiteReviewStats, UpsertReviewInput } from './reviews'
 
+export { getMapSites } from './sites'
+export type { MapSite } from './sites'
 export { getUserPlans, insertPlan, deletePlan } from './plans'
 export type { DivePlanWithSite } from './plans'
 export { getUserByUsername, getUserPublicDives, getUserPhotos } from './profile'

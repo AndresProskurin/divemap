@@ -23,6 +23,8 @@ export {
 } from './queries/sites'
 export type { MarineSpecies, SiteSearchResult, SiteListItem, BrowseSitesOptions } from './queries/sites'
 
+export { getMapSites } from './queries/sites'
+export type { MapSite } from './queries/sites'
 export { insertConditionsReport } from './queries/conditions'
 export type { InsertConditionsReportInput } from './queries/conditions'
 

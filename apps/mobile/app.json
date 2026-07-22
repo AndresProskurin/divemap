@@ -8,7 +8,8 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.divemap"
     },
     "android": {
       "adaptiveIcon": {
@@ -27,7 +28,8 @@
       "expo-router",
       "expo-font",
       "expo-secure-store",
-      "expo-web-browser"
+      "expo-web-browser",
+      "@rnmapbox/maps"
     ]
   }
 }
