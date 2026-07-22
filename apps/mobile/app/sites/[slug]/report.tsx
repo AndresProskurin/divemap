@@ -13,6 +13,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { insertConditionsReport } from '@divemap/db'
 import { createClient } from '../../../lib/supabase'
+import { pickPhoto, uploadSitePhoto, type PickedPhoto } from '../../../lib/photos'
+import { Image } from 'react-native'
 import { colors } from '@divemap/ui'
 
 type Step = 1 | 2 | 3 | 4 | 'done'
@@ -54,6 +56,7 @@ export default function ReportScreen() {
   const [tempSurface, setTempSurface] = useState('')
   const [tempBottom, setTempBottom] = useState('')
   const [notes, setNotes] = useState('')
+  const [photo, setPhoto] = useState<PickedPhoto | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
   const currentLevels = ['none', 'mild', 'moderate', 'strong', 'ripping'] as const
@@ -78,6 +81,17 @@ export default function ReportScreen() {
         Alert.alert('Error', 'Site not found.')
         setSubmitting(false)
         return
+      }
+      // Optional photo from step 4: upload before the report row so a photo
+      // failure surfaces instead of silently dropping the shot.
+      if (photo) {
+        try {
+          await uploadSitePhoto(photo, siteRes.data.id, notes.trim() || undefined)
+        } catch (e) {
+          Alert.alert('Photo upload failed', e instanceof Error ? e.message : 'Try again.')
+          setSubmitting(false)
+          return
+        }
       }
       const { error } = await insertConditionsReport({
         siteId: siteRes.data.id,
@@ -233,6 +247,28 @@ export default function ReportScreen() {
               placeholderTextColor={colors.tx3}
               multiline
             />
+            <View style={s.photoRow}>
+              <TouchableOpacity
+                onPress={async () => { const p = await pickPhoto(); if (p) setPhoto(p) }}
+                style={s.photoSlot}
+              >
+                {photo ? (
+                  <Image source={{ uri: photo.uri }} style={s.photoPreview} />
+                ) : (
+                  <Text style={s.photoSlotText}>+ photo</Text>
+                )}
+              </TouchableOpacity>
+              <Text style={s.photoHint}>
+                {photo
+                  ? 'Attached — uploads with your report.'
+                  : 'Optional photo — surface shots help other divers plan entries.'}
+              </Text>
+              {photo && (
+                <TouchableOpacity onPress={() => setPhoto(null)}>
+                  <Text style={{ fontSize: 16, color: colors.tx3 }}>×</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
         )}
 
@@ -338,6 +374,15 @@ const s = StyleSheet.create({
     backgroundColor: colors.card, borderRadius: 12, borderWidth: 1, borderColor: colors.line,
     padding: 13, fontSize: 13.5, color: colors.tx, height: 128, textAlignVertical: 'top',
   },
+  photoRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  photoSlot: {
+    width: 84, height: 84, borderRadius: 14, overflow: 'hidden',
+    borderWidth: 1, borderColor: colors.line, backgroundColor: colors.card,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  photoSlotText: { fontSize: 11, color: colors.tx3, fontWeight: '600' },
+  photoPreview: { width: '100%', height: '100%' },
+  photoHint: { flex: 1, fontSize: 11, color: colors.tx3, fontWeight: '500', lineHeight: 16 },
   navRow: { marginTop: 8 },
   btn: { backgroundColor: colors.acc, borderRadius: 14, padding: 15, alignItems: 'center' },
   btnText: { fontSize: 15, fontWeight: '700', color: '#02222e' },

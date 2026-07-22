@@ -7,12 +7,16 @@ import {
   StyleSheet,
   Platform,
   ActivityIndicator,
+  Alert,
+  Image,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter, Link } from 'expo-router'
-import { getSiteBySlug, getSiteConditions, getSiteOperators, getWishlistItem, addToWishlist, removeFromWishlist } from '@divemap/db'
+import { getSiteBySlug, getSiteConditions, getSiteOperators, getSitePhotos, getWishlistItem, addToWishlist, removeFromWishlist } from '@divemap/db'
+import type { SitePhoto } from '@divemap/db'
 import type { Tables } from '@divemap/db'
 import { createClient } from '../../../lib/supabase'
+import { pickPhoto, uploadSitePhoto } from '../../../lib/photos'
 import type { DiveSite, ConditionsReport } from '@divemap/db'
 import { colors } from '@divemap/ui'
 
@@ -40,6 +44,8 @@ export default function SiteDetailScreen() {
   const [site, setSite] = useState<DiveSite | null>(null)
   const [conditions, setConditions] = useState<ConditionsReport[]>([])
   const [operators, setOperators] = useState<Tables<'operators'>[]>([])
+  const [photos, setPhotos] = useState<SitePhoto[]>([])
+  const [uploading, setUploading] = useState(false)
   const [loading, setLoading] = useState(true)
   const [wishlisted, setWishlisted] = useState(false)
   const [wishlistId, setWishlistId] = useState<string | null>(null)
@@ -58,6 +64,7 @@ export default function SiteDetailScreen() {
       setLoading(false)
       if (s) {
         getSiteOperators(s.id, supabase).then(setOperators).catch(() => {})
+        getSitePhotos(s.id, supabase).then(setPhotos).catch(() => {})
         const { data: { user } } = await supabase.auth.getUser()
         if (user) {
           const item = await getWishlistItem(user.id, s.id, supabase)
@@ -200,6 +207,39 @@ export default function SiteDetailScreen() {
           </View>
         )}
 
+        {/* Photos */}
+        <View style={s.section}>
+          <Text style={s.sectionTitle}>PHOTOS{photos.length > 0 ? ` · ${photos.length}` : ''}</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={s.photoStrip}>
+            <TouchableOpacity
+              disabled={uploading}
+              onPress={async () => {
+                if (!site) return
+                const picked = await pickPhoto()
+                if (!picked) return
+                setUploading(true)
+                try {
+                  await uploadSitePhoto(picked, site.id)
+                  const supabase = createClient()
+                  setPhotos(await getSitePhotos(site.id, supabase))
+                } catch (e) {
+                  Alert.alert('Upload failed', e instanceof Error ? e.message : 'Try again.')
+                } finally {
+                  setUploading(false)
+                }
+              }}
+              style={s.photoAdd}
+            >
+              {uploading
+                ? <ActivityIndicator size="small" color={colors.acc} />
+                : <Text style={s.photoAddText}>＋</Text>}
+            </TouchableOpacity>
+            {photos.map(ph => (
+              <Image key={ph.id} source={{ uri: ph.url }} style={s.photoThumb} />
+            ))}
+          </ScrollView>
+        </View>
+
         {/* Operators (dive shops & clubs running this site) */}
         {operators.length > 0 && (
           <View style={s.section}>
@@ -248,6 +288,14 @@ export default function SiteDetailScreen() {
 }
 
 const s = StyleSheet.create({
+  photoStrip: { flexDirection: 'row', gap: 8, paddingTop: 8 },
+  photoAdd: {
+    width: 96, height: 96, borderRadius: 12,
+    borderWidth: 1, borderColor: colors.acc, borderStyle: 'dashed',
+    alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,180,216,0.06)',
+  },
+  photoAddText: { fontSize: 22, color: colors.acc },
+  photoThumb: { width: 96, height: 96, borderRadius: 12, backgroundColor: colors.card },
   opCard: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line,
