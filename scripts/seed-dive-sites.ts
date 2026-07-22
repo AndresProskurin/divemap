@@ -382,6 +382,17 @@ const FLAGSHIP_SITES: SiteInsert[] = [
 
 // ─── OVERPASS FETCH ──────────────────────────────────────────────────────────
 
+// How many OSM sites to import (post-filter). Override: OSM_LIMIT=2000 pnpm seed
+const OSM_LIMIT = Math.max(0, parseInt(process.env['OSM_LIMIT'] ?? '1000', 10) || 0)
+// OSM usage policy requires an identifying UA; without it Overpass answers 406.
+const OSM_USER_AGENT = 'DiveMap-seed/1.0 (github.com/AndresProskurin/divemap)'
+// Public Overpass instances 504/429 under load; try each in order.
+const OVERPASS_ENDPOINTS = [
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter',
+  'https://overpass.private.coffee/api/interpreter',
+]
+
 interface OverpassElement {
   id: number
   lat?: number
@@ -392,65 +403,168 @@ interface OverpassElement {
 }
 
 async function fetchOverpassSites(): Promise<SiteInsert[]> {
+  // nwr covers nodes, ways and relations (reef polygons resolve via `center`).
+  // Only `sport=scuba_diving` — that is the documented OSM tag for dive sites.
+  // The previous query also matched `sport=diving`, which in OSM is *platform
+  // diving* (springboards, "Sprunghalle"), and `leisure=scuba_diving`, which
+  // is not a real tag at all. Named elements only: an unnamed "Dive Site
+  // 4711238" row is noise in search and on cards.
+  // Nodes only, unsorted (`qt`): a global nwr query with `out center` makes
+  // the public instances compute polygon centres for the whole planet and they
+  // shed the load with 504s. Nodes are 4.1k of the 4.7k matches anyway.
   const query = `
-    [out:json][timeout:60];
-    (
-      node["leisure"="scuba_diving"];
-      node["sport"="diving"];
-    );
-    out center 200;
+    [out:json][timeout:150];
+    node["sport"="scuba_diving"]["name"];
+    out qt ${OSM_LIMIT * 3};
   `
 
   console.log('Fetching dive sites from Overpass API…')
   try {
-    const res = await fetch('https://overpass-api.de/api/interpreter', {
-      method: 'POST',
-      body: `data=${encodeURIComponent(query)}`,
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      signal: AbortSignal.timeout(65_000),
-    })
-
-    if (!res.ok) throw new Error(`Overpass HTTP ${res.status}`)
-    const json = (await res.json()) as { elements: OverpassElement[] }
+    let json: { elements: OverpassElement[] } | null = null
+    let lastErr = ''
+    for (const endpoint of OVERPASS_ENDPOINTS) {
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          body: `data=${encodeURIComponent(query)}`,
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            // Overpass answers 406 to requests without an identifying
+            // User-Agent (OSM usage policy). Node fetch sends none — this
+            // header IS the fix for the original "Fetched 0 sites" failure.
+            'User-Agent': OSM_USER_AGENT,
+          },
+          signal: AbortSignal.timeout(170_000),
+        })
+        if (!res.ok) {
+          lastErr = `HTTP ${res.status}`
+          console.warn(`  ${endpoint} → ${lastErr}, trying next mirror…`)
+          continue
+        }
+        json = (await res.json()) as { elements: OverpassElement[] }
+        break
+      } catch (e) {
+        lastErr = e instanceof Error ? e.message : String(e)
+        console.warn(`  ${endpoint} → ${lastErr}, trying next mirror…`)
+      }
+    }
+    if (!json) throw new Error(`all Overpass mirrors failed (last: ${lastErr})`)
+    console.log(`  ${json.elements.length} raw elements`)
 
     const slugsSeen = new Set(FLAGSHIP_SITES.map((s) => s.slug))
+    const out: SiteInsert[] = []
 
-    return json.elements
-      .filter((el) => {
-        const lat = el.lat ?? el.center?.lat
-        const lon = el.lon ?? el.center?.lon
-        return lat && lon
+    for (const el of json.elements) {
+      if (out.length >= OSM_LIMIT) break
+      const lat = el.lat ?? el.center?.lat
+      const lon = el.lon ?? el.center?.lon
+      if (!lat || !lon) continue
+
+      const tags = el.tags ?? {}
+      // `sport=scuba_diving` also marks dive shops, schools and pool centres.
+      // Drop anything that self-identifies as a business or building — what
+      // remains is overwhelmingly actual in-water sites.
+      if (tags['shop'] || tags['office'] || tags['building']) continue
+      if (tags['amenity'] === 'dive_centre') continue
+      if (tags['leisure'] === 'sports_centre' || tags['leisure'] === 'swimming_pool' || tags['leisure'] === 'fitness_centre') continue
+
+      const name = tags['name:en'] ?? tags['name']
+      if (!name) continue
+
+      const slug =
+        name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + `-osm-${el.id}`
+      if (slugsSeen.has(slug)) continue
+      slugsSeen.add(slug)
+
+      out.push({
+        slug,
+        name,
+        type: classifySite(name, tags),
+        lat,
+        lng: lon,
+        country: tags['addr:country'] ?? 'Unknown', // enriched below via Mapbox
+        region: tags['addr:city'] ?? tags['addr:state'] ?? undefined,
+        depth_min_m: 0,
+        depth_max_m: parseDepth(tags['maxdepth'] ?? tags['depth']),
+        description: tags['description'] ?? undefined,
       })
-      .map((el): SiteInsert | null => {
-        const lat = el.lat ?? el.center?.lat!
-        const lon = el.lon ?? el.center?.lon!
-        const tags = el.tags ?? {}
-        const name = tags['name'] ?? tags['name:en'] ?? `Dive Site ${el.id}`
+    }
 
-        // Rough slug.
-        const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') +
-          `-osm-${el.id}`
-
-        if (slugsSeen.has(slug)) return null
-        slugsSeen.add(slug)
-
-        return {
-          slug,
-          name,
-          type: 'reef',        // default; no OSM tag maps cleanly to our enum
-          lat,
-          lng: lon,
-          country: tags['addr:country'] ?? 'Unknown',
-          region: tags['addr:city'] ?? tags['addr:state'] ?? undefined,
-          depth_min_m: 0,
-          depth_max_m: tags['maxdepth'] ? parseFloat(tags['maxdepth']) : 20,
-        }
-      })
-      .filter((s): s is SiteInsert => s !== null)
+    return out
   } catch (err) {
     console.warn('Overpass fetch failed, skipping:', err instanceof Error ? err.message : err)
     return []
   }
+}
+
+/** Cheap classification from tags + name; defaults to reef. */
+function classifySite(name: string, tags: Record<string, string>): SiteInsert['type'] {
+  const n = name.toLowerCase()
+  if (tags['historic'] === 'wreck' || /wreck|wrak|épave|ss |uss |hms /.test(n)) return 'wreck'
+  if (tags['natural'] === 'cave_entrance' || /\bcave|grotto|grotte|höhle/.test(n)) return 'cave'
+  if (/cenote/.test(n)) return 'cenote'
+  if (/\bwall|drop.?off/.test(n)) return 'wall'
+  if (/pinnacle|seamount|sea mount/.test(n)) return 'pinnacle'
+  if (/kelp/.test(n)) return 'kelp'
+  if (/drift/.test(n)) return 'drift'
+  return 'reef'
+}
+
+/** OSM depth tags arrive as "40", "40 m", "130ft" or garbage. */
+function parseDepth(raw: string | undefined): number {
+  if (!raw) return 20
+  const v = parseFloat(raw)
+  if (!Number.isFinite(v) || v <= 0) return 20
+  const metres = /ft|feet|'/.test(raw) ? v * 0.3048 : v
+  return Math.min(300, Math.round(metres * 10) / 10)
+}
+
+// ─── COUNTRY ENRICHMENT (Mapbox reverse geocoding) ───────────────────────────
+// addr:country is almost never set on dive sites, and `country` is NOT NULL in
+// the schema. One reverse-geocode per 1° grid cell keeps the request count far
+// below the site count — sites cluster heavily.
+
+async function enrichCountries(sites: SiteInsert[]): Promise<void> {
+  const token = process.env['NEXT_PUBLIC_MAPBOX_TOKEN']
+  if (!token) {
+    console.warn('No NEXT_PUBLIC_MAPBOX_TOKEN — leaving countries as "Unknown".')
+    return
+  }
+
+  const cellCache = new Map<string, string>()
+  const need = sites.filter((s) => s.country === 'Unknown')
+  console.log(`Resolving countries for ${need.length} sites…`)
+
+  let resolved = 0
+  for (const site of need) {
+    const cell = `${Math.floor(site.lat)},${Math.floor(site.lng)}`
+    let country = cellCache.get(cell)
+    if (country === undefined) {
+      try {
+        const res = await fetch(
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${site.lng},${site.lat}.json` +
+            `?types=country&language=en&access_token=${token}`,
+          { signal: AbortSignal.timeout(10_000) },
+        )
+        if (res.ok) {
+          const geo = (await res.json()) as { features: Array<{ text_en?: string; text?: string }> }
+          country = geo.features[0]?.text_en ?? geo.features[0]?.text ?? ''
+        } else {
+          country = ''
+        }
+      } catch {
+        country = ''
+      }
+      cellCache.set(cell, country)
+      // ~8 req/s — well under Mapbox limits, polite for a seed script.
+      await new Promise((r) => setTimeout(r, 120))
+    }
+    if (country) {
+      site.country = country
+      resolved++
+    }
+  }
+  console.log(`  ✓ ${resolved} resolved via ${cellCache.size} geocoding calls (open sea stays "Unknown")`)
 }
 
 // ─── MAIN ────────────────────────────────────────────────────────────────────
@@ -480,6 +594,8 @@ async function main() {
   // Fetch and seed Overpass sites.
   const overpassSites = await fetchOverpassSites()
   console.log(`Fetched ${overpassSites.length} sites from Overpass.`)
+
+  await enrichCountries(overpassSites)
 
   if (overpassSites.length > 0) {
     // Batch in groups of 100.

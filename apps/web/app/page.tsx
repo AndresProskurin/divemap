@@ -25,7 +25,7 @@ async function getDiveSites(): Promise<DiveSite[]> {
     const { data } = await supabase
       .from('dive_sites')
       .select('*')
-      .order('rating', { ascending: false })
+      .order('rating', { ascending: false, nullsFirst: false })
       .limit(500)
     return (data ?? []) as DiveSite[]
   } catch {

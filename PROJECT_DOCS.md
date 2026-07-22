@@ -278,7 +278,27 @@ comparing row counts.
 
 ### 8.1 `scripts/seed-dive-sites.ts`
 
-Writes to `dive_sites` only, upserting on `slug` (safe to re-run).
+Writes to `dive_sites` only, upserting on `slug` (safe to re-run). Two stages:
+20 curated flagship sites, then up to `OSM_LIMIT` (default 1000) real sites
+from OpenStreetMap via Overpass, with countries reverse-geocoded through
+Mapbox (one call per 1° grid cell, so ~1000 sites cost ~200 calls).
+
+The Overpass stage failed silently for a long time — three separate causes,
+all fixed and worth knowing:
+
+* **406** — Overpass rejects requests without an identifying `User-Agent`
+  (OSM policy); Node's `fetch` sends none.
+* **Wrong tags** — `sport=diving` is *platform* diving (springboard halls),
+  and `leisure=scuba_diving` does not exist; the documented tag is
+  `sport=scuba_diving`.
+* **504** — a global `nwr` query with `out center` makes public instances
+  compute polygon centres for the planet and they shed load; nodes-only with
+  `out qt` returns in ~2 min. Three mirror endpoints are tried in order.
+
+Business noise (dive shops, schools, pool centres share the tag) is filtered
+by `shop`/`office`/`building`/`amenity=dive_centre`/`leisure=sports_centre`
+tags; only named elements are imported. Types are classified heuristically
+from tags and names (wreck/cave/cenote/wall/pinnacle/kelp/drift, default reef).
 Uses `SUPABASE_SERVICE_ROLE_KEY` to bypass RLS, falling back to the anon key if absent.
 
 ```bash

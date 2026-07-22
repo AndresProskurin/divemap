@@ -83,7 +83,7 @@ export async function getTopSiteSlugs(limit: number, supabase: Client): Promise<
   const { data } = await supabase
     .from('dive_sites')
     .select('slug')
-    .order('rating', { ascending: false })
+    .order('rating', { ascending: false, nullsFirst: false })
     .limit(limit)
   return (data ?? []).map((s) => s.slug)
 }
@@ -134,7 +134,7 @@ export async function browseSites(
   if (level) q = q.eq('level', level as Enums<'dive_level'>)
   if (country) q = q.ilike('country', country)
 
-  q = q.order('rating', { ascending: false }).range(from, to)
+  q = q.order('rating', { ascending: false, nullsFirst: false }).range(from, to)
 
   const { data, count } = await q
   return {
@@ -153,7 +153,7 @@ export async function searchSites(
     .from('dive_sites')
     .select('id, name, slug, country, depth_max_m')
     .ilike('name', `%${query.trim()}%`)
-    .order('rating', { ascending: false })
+    .order('rating', { ascending: false, nullsFirst: false })
     .limit(limit)
   return (data ?? []) as SiteSearchResult[]
 }
