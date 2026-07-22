@@ -134,7 +134,10 @@ export async function browseSites(
   if (level) q = q.eq('level', level as Enums<'dive_level'>)
   if (country) q = q.ilike('country', country)
 
-  q = q.order('rating', { ascending: false, nullsFirst: false }).range(from, to)
+  // Secondary sort: 1000 unrated OSM rows tie on rating, and Postgres gives
+  // no stable order within a tie — page N and N+1 could both return the same
+  // row (seen live as React duplicate-key errors on the mobile Sites tab).
+  q = q.order('rating', { ascending: false, nullsFirst: false }).order('id').range(from, to)
 
   const { data, count } = await q
   return {

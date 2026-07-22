@@ -232,7 +232,10 @@ against the real bucket.
 
 ### 🟡 Quality
 
-6. **Mobile app never built or run.** Expo project is complete but untested.
+6. **Mobile app** — runs as a dev build (`expo run:ios`; Expo Go no longer works since
+   @rnmapbox/maps is native). Verified live: Google sign-in, 5-step log wizard writing to
+   the shared DB, native clustered map with tap-through. Remaining gaps: photos/species in
+   the wizard, offline, push.
 7. **`dive_sites_near` is dead code** — see §5.
 8. Two `<img>` lint warnings (`ProfilePage.tsx`, `ReportFlow.tsx`) — should be `next/image`.
 
@@ -571,4 +574,3 @@ on Site URL, unauthenticated, which reads as "login did nothing".
    404 until the `dive_plans` table and `users.username` exist. SQL editor or `db push`.
 2. Decide on `dive_sites_near`: wire it into the map's viewport query, or drop it and the index.
 3. Wire up Stripe for the premium paywall (Phase 5).
-4. Build and run the mobile app — the Expo project has never been started (§6).
