@@ -175,7 +175,13 @@ export default function LogScreen() {
     try {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { Alert.alert('Sign in', 'Please sign in to log a dive.'); return }
+      if (!user) {
+        Alert.alert('Sign in required', 'Sign in to save this dive — your entries stay on this step.', [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Sign in', onPress: () => router.push('/auth/sign-in') },
+        ])
+        return
+      }
 
       const vizNum = parseFloat(viz)
       const tS = parseFloat(tempSurface)

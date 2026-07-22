@@ -13,6 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter, Link } from 'expo-router'
 import { createClient } from '../../lib/supabase'
+import { signInWithGoogle } from '../../lib/googleAuth'
 import { colors } from '@divemap/ui'
 
 export default function SignInScreen() {
@@ -22,6 +23,19 @@ export default function SignInScreen() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
+
+  async function handleGoogle() {
+    setGoogleLoading(true)
+    try {
+      const ok = await signInWithGoogle()
+      if (ok) router.replace('/(tabs)/profile')
+    } catch (e) {
+      Alert.alert('Google sign-in failed', e instanceof Error ? e.message : 'Unknown error')
+    } finally {
+      setGoogleLoading(false)
+    }
+  }
 
   async function signIn() {
     if (!email.trim() || !password) return
@@ -47,6 +61,20 @@ export default function SignInScreen() {
 
         <Text style={s.heading}>Sign in</Text>
         <Text style={s.sub}>Log dives, report conditions, plan tech dives.</Text>
+
+        <TouchableOpacity
+          onPress={handleGoogle}
+          disabled={googleLoading}
+          style={[s.googleBtn, googleLoading && { opacity: 0.6 }]}
+        >
+          <Text style={s.googleBtnText}>{googleLoading ? 'Opening Google…' : 'Continue with Google'}</Text>
+        </TouchableOpacity>
+
+        <View style={s.orRow}>
+          <View style={s.orLine} />
+          <Text style={s.orText}>OR</Text>
+          <View style={s.orLine} />
+        </View>
 
         <View style={s.form}>
           <TextInput
@@ -138,6 +166,14 @@ const s = StyleSheet.create({
     color: colors.tx,
     fontWeight: '500',
   },
+  googleBtn: {
+    borderWidth: 1.5, borderColor: colors.line, borderRadius: 14,
+    padding: 15, alignItems: 'center', marginTop: 18,
+  },
+  googleBtnText: { fontSize: 14.5, fontWeight: '700', color: colors.tx },
+  orRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: 14 },
+  orLine: { flex: 1, height: 1, backgroundColor: colors.line },
+  orText: { fontSize: 9, fontWeight: '600', color: colors.tx3, letterSpacing: 1.5 },
   btn: {
     backgroundColor: colors.acc,
     borderRadius: 14,
