@@ -168,6 +168,11 @@ export default function ProfileScreen() {
             <Text style={s.btnText}>+ Log a dive</Text>
           </TouchableOpacity>
         </Link>
+        <Link href="/edit-profile" asChild>
+          <TouchableOpacity style={s.outlineBtn}>
+            <Text style={s.outlineBtnText}>Edit profile</Text>
+          </TouchableOpacity>
+        </Link>
         <TouchableOpacity
           onPress={() => Alert.alert('Sign out', 'Are you sure?', [
             { text: 'Cancel', style: 'cancel' },

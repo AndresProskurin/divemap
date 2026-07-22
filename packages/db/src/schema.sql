@@ -10,6 +10,7 @@
 --   20260717000001_dive_reviews.sql
 --   20260721000000_storage_site_photos.sql
 --   20260722000000_dive_plans_usernames.sql
+--   20260723000000_user_gear.sql
 -- ────────────────────────────────────────────────────────────────────────────
 
 -- ────────────────────────────────────────────────────────────────────────────
@@ -986,3 +987,20 @@ create policy "Users can delete their own dive plans"
   on public.dive_plans for delete
   to authenticated
   using ((select auth.uid()) = user_id);
+
+-- ────────────────────────────────────────────────────────────────────────────
+-- 20260723000000_user_gear.sql
+-- ────────────────────────────────────────────────────────────────────────────
+
+set search_path to public, extensions;
+
+-- Diver equipment list (profile settings). Same denormalised-jsonb shape as
+-- certifications: gear is only ever read as a whole list on the profile
+-- screen, and items are free-form ({ category, name }) — a relational model
+-- would buy nothing here.
+
+alter table public.users
+  add column gear jsonb not null default '[]'::jsonb;
+
+alter table public.users
+  add constraint users_gear_is_array check (jsonb_typeof(gear) = 'array');

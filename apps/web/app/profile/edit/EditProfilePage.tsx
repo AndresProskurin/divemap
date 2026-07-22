@@ -3,8 +3,8 @@
 import { useState, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import type { User } from '@divemap/db'
-import { createClient, updateUserProfile } from '@divemap/db'
+import type { User, Certification, GearItem } from '@divemap/db'
+import { createClient, updateUserProfile, CERT_CATALOG, GEAR_CATEGORIES } from '@divemap/db'
 
 interface Props {
   user: User
@@ -40,6 +40,32 @@ export function EditProfilePage({ user }: Props) {
   const [bio, setBio] = useState(user.bio ?? '')
   const [homeCountry, setHomeCountry] = useState(user.home_country ?? '')
   const [avatarUrl, setAvatarUrl] = useState(user.avatar_url ?? '')
+  const [certs, setCerts] = useState<Certification[]>(
+    (user.certifications as unknown as Certification[] | null) ?? [],
+  )
+  const [gear, setGear] = useState<GearItem[]>((user.gear as unknown as GearItem[] | null) ?? [])
+  // Cert picker state
+  const [agencyIdx, setAgencyIdx] = useState(0)
+  const [certIdx, setCertIdx] = useState(0)
+  const [certYear, setCertYear] = useState(String(new Date().getFullYear()))
+  // Gear picker state
+  const [gearCat, setGearCat] = useState<string>(GEAR_CATEGORIES[0])
+  const [gearName, setGearName] = useState('')
+
+  function addCert() {
+    const cat = CERT_CATALOG[agencyIdx]?.certs[certIdx]
+    if (!cat) return
+    const year = parseInt(certYear, 10)
+    if (certs.some(c => c.abbr === cat.abbr && c.org === cat.org)) return
+    setCerts(prev => [...prev, { ...cat, year: Number.isNaN(year) ? new Date().getFullYear() : year }])
+  }
+
+  function addGear() {
+    const name = gearName.trim()
+    if (!name) return
+    setGear(prev => [...prev, { category: gearCat, name }])
+    setGearName('')
+  }
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
@@ -66,6 +92,8 @@ export function EditProfilePage({ user }: Props) {
         bio: bio.trim() || null,
         home_country: homeCountry.trim() || null,
         avatar_url: avatarUrl.trim() || null,
+        certifications: certs,
+        gear,
       },
       supabase,
     )
@@ -229,6 +257,135 @@ export function EditProfilePage({ user }: Props) {
           />
           <div className="font-medium" style={{ fontSize: '10.5px', color: 'var(--tx3)' }}>
             Paste a public image URL. Photo upload coming soon.
+          </div>
+        </div>
+
+
+        {/* Certifications */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={LABEL_STYLE}>Certifications</div>
+          {certs.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '7px' }}>
+              {certs.map((c, i) => (
+                <span
+                  key={`${c.org}-${c.abbr}`}
+                  className="font-mono font-bold"
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '7px',
+                    fontSize: '10px', color: 'var(--acc)', border: '1px solid var(--acc)',
+                    borderRadius: '6px', padding: '5px 8px', letterSpacing: '0.06em',
+                  }}
+                >
+                  {c.abbr} · {c.name} · {c.year}
+                  <button
+                    type="button"
+                    onClick={() => setCerts(prev => prev.filter((_, j) => j !== i))}
+                    aria-label={`Remove ${c.name}`}
+                    style={{ background: 'none', border: 'none', color: 'var(--tx3)', cursor: 'pointer', fontSize: '13px', lineHeight: 1, padding: 0 }}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <select
+              value={agencyIdx}
+              onChange={e => { setAgencyIdx(Number(e.target.value)); setCertIdx(0) }}
+              style={{ ...INPUT_STYLE, width: 'auto', flex: '1 1 120px' }}
+            >
+              {CERT_CATALOG.map((a, i) => <option key={a.agency} value={i}>{a.agency}</option>)}
+            </select>
+            <select
+              value={certIdx}
+              onChange={e => setCertIdx(Number(e.target.value))}
+              style={{ ...INPUT_STYLE, width: 'auto', flex: '2 1 180px' }}
+            >
+              {(CERT_CATALOG[agencyIdx]?.certs ?? []).map((c, i) => (
+                <option key={c.abbr} value={i}>{c.name}</option>
+              ))}
+            </select>
+            <input
+              type="number"
+              value={certYear}
+              onChange={e => setCertYear(e.target.value)}
+              min={1960}
+              max={new Date().getFullYear()}
+              style={{ ...INPUT_STYLE, width: '92px' }}
+            />
+            <button
+              type="button"
+              onClick={addCert}
+              className="font-bold"
+              style={{
+                padding: '0 18px', borderRadius: '12px', border: '1px solid var(--acc)',
+                background: 'var(--chip)', color: 'var(--acc)', fontSize: '13px', cursor: 'pointer',
+              }}
+            >
+              Add
+            </button>
+          </div>
+        </div>
+
+        {/* Gear */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={LABEL_STYLE}>Gear</div>
+          {gear.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {gear.map((g, i) => (
+                <div
+                  key={`${g.category}-${g.name}-${i}`}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '10px',
+                    border: '1px solid var(--line)', background: 'var(--card)',
+                    borderRadius: '10px', padding: '8px 12px',
+                  }}
+                >
+                  <span className="font-mono font-semibold" style={{ fontSize: '9px', color: 'var(--tx3)', letterSpacing: '0.08em', width: '86px', flexShrink: 0, textTransform: 'uppercase' }}>
+                    {g.category}
+                  </span>
+                  <span className="font-semibold" style={{ flex: 1, fontSize: '13px', color: 'var(--tx)' }}>{g.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => setGear(prev => prev.filter((_, j) => j !== i))}
+                    aria-label={`Remove ${g.name}`}
+                    style={{ background: 'none', border: 'none', color: 'var(--tx3)', cursor: 'pointer', fontSize: '15px', lineHeight: 1 }}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <select
+              value={gearCat}
+              onChange={e => setGearCat(e.target.value)}
+              style={{ ...INPUT_STYLE, width: 'auto', flex: '1 1 130px' }}
+            >
+              {GEAR_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <input
+              type="text"
+              placeholder="e.g. Shearwater Perdix 2"
+              value={gearName}
+              onChange={e => setGearName(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addGear() } }}
+              maxLength={80}
+              style={{ ...INPUT_STYLE, width: 'auto', flex: '2 1 200px' }}
+            />
+            <button
+              type="button"
+              onClick={addGear}
+              className="font-bold"
+              style={{
+                padding: '0 18px', borderRadius: '12px', border: '1px solid var(--acc)',
+                background: 'var(--chip)', color: 'var(--acc)', fontSize: '13px', cursor: 'pointer',
+              }}
+            >
+              Add
+            </button>
           </div>
         </div>
 

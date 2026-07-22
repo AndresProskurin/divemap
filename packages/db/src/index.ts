@@ -93,3 +93,6 @@ export interface Certification {
   /** Year awarded, e.g. 2024. */
   year: number
 }
+
+export { CERT_CATALOG, GEAR_CATEGORIES } from './certs'
+export type { CatalogCert, GearItem } from './certs'

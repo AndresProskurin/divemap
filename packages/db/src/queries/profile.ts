@@ -55,6 +55,8 @@ export interface UpdateProfileInput {
   bio?: string | null
   home_country?: string | null
   avatar_url?: string | null
+  certifications?: unknown
+  gear?: unknown
 }
 
 export async function updateUserProfile(
@@ -64,7 +66,7 @@ export async function updateUserProfile(
 ): Promise<{ error: string | null }> {
   const { error } = await supabase
     .from('users')
-    .update({ ...input, updated_at: new Date().toISOString() })
+    .update({ ...(input as Record<string, unknown>), updated_at: new Date().toISOString() })
     .eq('id', userId)
   return { error: error?.message ?? null }
 }
@@ -86,7 +88,7 @@ export async function getUserWishlist(
 export async function getUserByUsername(username: string, supabase: Client) {
   const { data } = await supabase
     .from('users')
-    .select('id, username, display_name, avatar_url, bio, home_country, certifications, created_at')
+    .select('id, username, display_name, avatar_url, bio, home_country, certifications, gear, created_at')
     .eq('username', username.toLowerCase())
     .single()
   return data ?? null

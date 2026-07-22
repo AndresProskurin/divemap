@@ -29,6 +29,7 @@ export type Database = {
           home_country: string | null
           certifications: Json
           preferences: Json
+          gear: Json
           total_dives: number
           created_at: string
           updated_at: string
@@ -43,6 +44,7 @@ export type Database = {
           home_country?: string | null
           certifications?: Json
           preferences?: Json
+          gear?: Json
           total_dives?: number
           created_at?: string
           updated_at?: string
@@ -57,6 +59,7 @@ export type Database = {
           home_country?: string | null
           certifications?: Json
           preferences?: Json
+          gear?: Json
           total_dives?: number
           created_at?: string
           updated_at?: string

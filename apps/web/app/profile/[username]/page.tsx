@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { createServerClient } from '@supabase/ssr'
-import type { Database, Certification } from '@divemap/db'
+import type { Database, Certification, GearItem } from '@divemap/db'
 import { getUserByUsername, getUserPublicDives, getUserPhotos } from '@divemap/db'
 
 export const dynamic = 'force-dynamic'
@@ -87,6 +87,7 @@ export default async function PublicProfilePage({ params }: Props) {
 
   const displayName = user.display_name ?? user.username ?? 'Diver'
   const certs = (user.certifications as unknown as Certification[] | null) ?? []
+  const gear = (user.gear as unknown as GearItem[] | null) ?? []
 
   const maxDepth = dives.reduce((m, d) => Math.max(m, d.max_depth_m), 0)
   const totalMinutes = dives.reduce((s, d) => s + d.bottom_time_min, 0)
@@ -140,6 +141,27 @@ export default async function PublicProfilePage({ params }: Props) {
               }}
             >
               {c.abbr ?? c.name}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* ── Gear ── */}
+      {gear.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '7px', padding: '10px 16px 0' }}>
+          {gear.map((g, i) => (
+            <span
+              key={i}
+              className="font-medium"
+              style={{
+                fontSize: '11px', color: 'var(--tx2)', border: '1px solid var(--line)',
+                background: 'var(--card)', borderRadius: '999px', padding: '5px 11px',
+              }}
+            >
+              <span className="font-mono" style={{ fontSize: '8.5px', color: 'var(--tx3)', letterSpacing: '0.06em' }}>
+                {g.category.toUpperCase()}
+              </span>
+              {' '}{g.name}
             </span>
           ))}
         </div>

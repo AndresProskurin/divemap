@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import type { User, Certification, DiveWithSite, WishlistSite, DivePlanWithSite } from '@divemap/db'
+import type { User, Certification, GearItem, DiveWithSite, WishlistSite, DivePlanWithSite } from '@divemap/db'
 import { createClient, deletePlan, useSignIn } from '@divemap/db'
 
 type ProfileTab = 'Logbook' | 'Dive Plans' | 'Certifications' | 'Wishlist'
@@ -314,6 +314,7 @@ export function ProfilePage({ user, dives, wishlist, plans: initialPlans }: Prop
 
   const displayName = user?.display_name ?? 'Diver'
   const certs = (user?.certifications as unknown as Certification[] | null) ?? []
+  const gear = (user?.gear as unknown as GearItem[] | null) ?? []
   const topCert = certs[0]?.name ?? null
   const subtitle = [topCert, user?.home_country].filter(Boolean).join(' · ')
 
@@ -463,9 +464,37 @@ export function ProfilePage({ user, dives, wishlist, plans: initialPlans }: Prop
       {tab === 'Certifications' && (
         <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '9px', animation: 'dmFade 0.25s ease' }}>
           {certs.length === 0 ? (
-            <p style={{ fontSize: '13px', color: 'var(--tx3)', fontStyle: 'italic' }}>No certifications added yet.</p>
+            <p style={{ fontSize: '13px', color: 'var(--tx3)', fontStyle: 'italic' }}>
+              No certifications added yet — add them in <Link href="/profile/edit" style={{ color: 'var(--acc)' }}>Edit profile</Link>.
+            </p>
           ) : (
             certs.map((c, i) => <CertCard key={i} cert={c} />)
+          )}
+
+          {/* Gear */}
+          <div className="font-mono font-semibold" style={{ fontSize: '9.5px', color: 'var(--tx3)', letterSpacing: '0.12em', marginTop: '10px' }}>
+            GEAR
+          </div>
+          {gear.length === 0 ? (
+            <p style={{ fontSize: '13px', color: 'var(--tx3)', fontStyle: 'italic' }}>
+              No gear listed yet.
+            </p>
+          ) : (
+            gear.map((g, i) => (
+              <div
+                key={i}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '10px',
+                  border: '1px solid var(--line)', background: 'var(--card)',
+                  borderRadius: '12px', padding: '10px 13px',
+                }}
+              >
+                <span className="font-mono font-semibold" style={{ fontSize: '9px', color: 'var(--acc)', letterSpacing: '0.08em', width: '90px', flexShrink: 0, textTransform: 'uppercase' }}>
+                  {g.category}
+                </span>
+                <span className="font-semibold" style={{ fontSize: '13px', color: 'var(--tx)' }}>{g.name}</span>
+              </div>
+            ))
           )}
         </div>
       )}
