@@ -22,6 +22,7 @@ export type Database = {
         Row: {
           id: string
           email: string
+          username: string | null
           display_name: string | null
           avatar_url: string | null
           bio: string | null
@@ -35,6 +36,7 @@ export type Database = {
         Insert: {
           id: string
           email: string
+          username?: string | null
           display_name?: string | null
           avatar_url?: string | null
           bio?: string | null
@@ -48,6 +50,7 @@ export type Database = {
         Update: {
           id?: string
           email?: string
+          username?: string | null
           display_name?: string | null
           avatar_url?: string | null
           bio?: string | null
@@ -595,6 +598,78 @@ export type Database = {
             columns: ['user_id']
             isOneToOne: false
             referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      dive_plans: {
+        Row: {
+          id: string
+          user_id: string
+          site_id: string | null
+          name: string
+          depth_m: number
+          bottom_time_min: number
+          gas_o2: number
+          gas_he: number
+          gf_lo: number
+          gf_hi: number
+          deco_gases: Json
+          runtime_min: number | null
+          tts_min: number | null
+          stop_count: number | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          site_id?: string | null
+          name: string
+          depth_m: number
+          bottom_time_min: number
+          gas_o2: number
+          gas_he?: number
+          gf_lo: number
+          gf_hi: number
+          deco_gases?: Json
+          runtime_min?: number | null
+          tts_min?: number | null
+          stop_count?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          site_id?: string | null
+          name?: string
+          depth_m?: number
+          bottom_time_min?: number
+          gas_o2?: number
+          gas_he?: number
+          gf_lo?: number
+          gf_hi?: number
+          deco_gases?: Json
+          runtime_min?: number | null
+          tts_min?: number | null
+          stop_count?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'dive_plans_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'dive_plans_site_id_fkey'
+            columns: ['site_id']
+            isOneToOne: false
+            referencedRelation: 'dive_sites'
             referencedColumns: ['id']
           },
         ]

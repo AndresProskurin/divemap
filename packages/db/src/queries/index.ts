@@ -29,3 +29,8 @@ export {
   computeReviewStats,
 } from './reviews'
 export type { SiteReview, SiteReviewStats, UpsertReviewInput } from './reviews'
+
+export { getUserPlans, insertPlan, deletePlan } from './plans'
+export type { DivePlanWithSite } from './plans'
+export { getUserByUsername, getUserPublicDives, getUserPhotos } from './profile'
+export type { UserPhoto } from './profile'

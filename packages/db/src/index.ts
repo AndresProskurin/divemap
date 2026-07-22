@@ -26,7 +26,18 @@ export type { MarineSpecies, SiteSearchResult, SiteListItem, BrowseSitesOptions 
 export { insertConditionsReport } from './queries/conditions'
 export type { InsertConditionsReportInput } from './queries/conditions'
 
-export { getUserProfile, getUserDives, getUserWishlist, updateUserProfile } from './queries/profile'
+export {
+  getUserProfile,
+  getUserDives,
+  getUserWishlist,
+  updateUserProfile,
+  getUserByUsername,
+  getUserPublicDives,
+  getUserPhotos,
+} from './queries/profile'
+export type { UserPhoto } from './queries/profile'
+export { getUserPlans, insertPlan, deletePlan } from './queries/plans'
+export type { DivePlanWithSite } from './queries/plans'
 export type { DiveWithSite, WishlistSite, UpdateProfileInput } from './queries/profile'
 
 export { insertDive } from './queries/dives'
