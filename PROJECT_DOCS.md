@@ -570,6 +570,12 @@ on Site URL, unauthenticated, which reads as "login did nothing".
 
 ## 15. Immediate Action Items
 
+0. **Tech Planner deep-work (requested 2026-07-22, research first):** custom deco gases
+   (web has only the EAN50/EAN36/O₂ presets, mobile planner has none at all), automatic
+   best-mix suggestion for a target depth (fO₂ from a 1.2–1.4 bar bottom ppO₂, fHe from
+   an END ceiling of 30–40 m), and gas logistics (SAC-based consumption, minimum gas /
+   rock bottom). Compare against Subsurface planner and MultiDeco before designing.
+
 1. **Apply `20260722000000_dive_plans_usernames.sql`** — Save Plan and /profile/[username]
    404 until the `dive_plans` table and `users.username` exist. SQL editor or `db push`.
 2. Decide on `dive_sites_near`: wire it into the map's viewport query, or drop it and the index.

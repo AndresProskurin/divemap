@@ -10,7 +10,8 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter, Link } from 'expo-router'
-import { getSiteBySlug, getSiteConditions, getWishlistItem, addToWishlist, removeFromWishlist } from '@divemap/db'
+import { getSiteBySlug, getSiteConditions, getSiteOperators, getWishlistItem, addToWishlist, removeFromWishlist } from '@divemap/db'
+import type { Tables } from '@divemap/db'
 import { createClient } from '../../../lib/supabase'
 import type { DiveSite, ConditionsReport } from '@divemap/db'
 import { colors } from '@divemap/ui'
@@ -38,6 +39,7 @@ export default function SiteDetailScreen() {
 
   const [site, setSite] = useState<DiveSite | null>(null)
   const [conditions, setConditions] = useState<ConditionsReport[]>([])
+  const [operators, setOperators] = useState<Tables<'operators'>[]>([])
   const [loading, setLoading] = useState(true)
   const [wishlisted, setWishlisted] = useState(false)
   const [wishlistId, setWishlistId] = useState<string | null>(null)
@@ -55,6 +57,7 @@ export default function SiteDetailScreen() {
       setConditions(cond)
       setLoading(false)
       if (s) {
+        getSiteOperators(s.id, supabase).then(setOperators).catch(() => {})
         const { data: { user } } = await supabase.auth.getUser()
         if (user) {
           const item = await getWishlistItem(user.id, s.id, supabase)
@@ -197,6 +200,30 @@ export default function SiteDetailScreen() {
           </View>
         )}
 
+        {/* Operators (dive shops & clubs running this site) */}
+        {operators.length > 0 && (
+          <View style={s.section}>
+            <Text style={s.sectionTitle}>OPERATORS · {operators.length}</Text>
+            {operators.map(op => (
+              <View key={op.id} style={s.opCard}>
+                <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+                    <Text style={s.opName} numberOfLines={1}>{op.name}</Text>
+                    {op.tech_certified && (
+                      <Text style={s.opTechBadge}>TECH ✓</Text>
+                    )}
+                  </View>
+                  {op.base != null && <Text style={s.opBase} numberOfLines={1}>{op.base}</Text>}
+                  {op.certs_offered.length > 0 && (
+                    <Text style={s.opKit} numberOfLines={1}>{op.certs_offered.join(' · ')}</Text>
+                  )}
+                </View>
+                {op.rating != null && <Text style={s.opRating}>★ {op.rating.toFixed(1)}</Text>}
+              </View>
+            ))}
+          </View>
+        )}
+
         {/* CTA buttons */}
         <View style={s.ctaRow}>
           <Link href={`/(tabs)/log?site=${site.slug}`} asChild>
@@ -221,6 +248,20 @@ export default function SiteDetailScreen() {
 }
 
 const s = StyleSheet.create({
+  opCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line,
+    borderRadius: 14, padding: 13, marginTop: 8,
+  },
+  opName: { fontSize: 13.5, fontWeight: '700', color: colors.tx, flexShrink: 1 },
+  opTechBadge: {
+    fontSize: 8, fontWeight: '700', color: colors.acc,
+    borderWidth: 1, borderColor: colors.acc, borderRadius: 4,
+    paddingHorizontal: 4, paddingVertical: 1, overflow: 'hidden', letterSpacing: 0.8,
+  },
+  opBase: { fontSize: 11, color: colors.tx3, fontWeight: '500' },
+  opKit: { fontSize: 9.5, color: colors.tx2, fontFamily: Platform.select({ ios: 'Courier New', android: 'monospace' }) },
+  opRating: { fontSize: 12, fontWeight: '600', color: colors.tx2 },
   screen: {
     flex: 1,
     backgroundColor: colors.bg,
