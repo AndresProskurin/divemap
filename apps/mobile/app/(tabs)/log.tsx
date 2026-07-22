@@ -192,8 +192,10 @@ export default function LogScreen() {
         divedAt: date,
         maxDepthM: parseFloat(depth),
         bottomTimeMin: parseFloat(time),
-        gasO2: o2Num,
-        gasHe: heNum > 0 ? heNum : null,
+        // UI thinks in percent; the dives table and the deco engine store
+        // fractions 0-1 (gas_o2 numeric(4,3) overflows on anything >= 10).
+        gasO2: o2Num / 100,
+        gasHe: heNum > 0 ? heNum / 100 : null,
         vizM: isNaN(vizNum) ? null : vizNum,
         currentLevel: currentIdx === null ? null : CURRENT_LEVELS[currentIdx],
         tempSurfaceC: isNaN(tS) ? null : tS,

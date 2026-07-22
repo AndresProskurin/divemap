@@ -267,8 +267,10 @@ export function LogDivePage({ prelinkedSite }: Props) {
           divedAt: date,
           maxDepthM: depthNum,
           bottomTimeMin: timeNum,
-          gasO2: o2Num,
-          gasHe: heNum > 0 ? heNum : null,
+          // UI thinks in percent; the dives table and the deco engine store
+          // fractions 0-1 (gas_o2 numeric(4,3) overflows on anything >= 10).
+          gasO2: o2Num / 100,
+          gasHe: heNum > 0 ? heNum / 100 : null,
           vizM: isNaN(vizNum) ? null : vizNum,
           buddy: buddy.trim() || null,
           notes: notes.trim() || null,

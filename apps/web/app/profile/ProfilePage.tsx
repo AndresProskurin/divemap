@@ -11,9 +11,10 @@ type ProfileTab = 'Logbook' | 'Dive Plans' | 'Certifications' | 'Wishlist'
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function gasLabel(o2: number | null, he: number | null): string {
+  // gas_o2/gas_he are stored as fractions 0-1 (deco-engine GasMix convention).
   if (o2 === null) return '—'
-  const pO2 = Math.round(o2)
-  const pHe = Math.round(he ?? 0)
+  const pO2 = Math.round(o2 * 100)
+  const pHe = Math.round((he ?? 0) * 100)
   if (pHe > 0) return `TX ${pO2}/${pHe}`
   if (pO2 === 21) return 'Air'
   return `EAN${pO2}`

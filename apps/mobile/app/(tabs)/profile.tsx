@@ -17,9 +17,10 @@ import type { DiveWithSite } from '@divemap/db'
 import { colors } from '@divemap/ui'
 
 function gasLabel(o2: number | null, he: number | null): string {
+  // gas_o2/gas_he are stored as fractions 0-1 (deco-engine GasMix convention).
   if (o2 === null) return '—'
-  const p2 = Math.round(o2)
-  const ph = Math.round(he ?? 0)
+  const p2 = Math.round(o2 * 100)
+  const ph = Math.round((he ?? 0) * 100)
   if (ph > 0) return `TX ${p2}/${ph}`
   if (p2 === 21) return 'Air'
   return `EAN${p2}`

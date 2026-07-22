@@ -8,10 +8,12 @@ import type { DiveWithSite } from '@divemap/db'
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function gasName(o2: number | null, he: number | null): string {
+  // gas_o2/gas_he are stored as fractions 0-1 (deco-engine GasMix convention).
   if (!o2) return 'Air'
-  const heVal = he ?? 0
-  if (heVal > 0) return `TMX ${o2}/${heVal}`
-  if (o2 > 21) return `EAN${o2}`
+  const pO2 = Math.round(o2 * 100)
+  const pHe = Math.round((he ?? 0) * 100)
+  if (pHe > 0) return `TMX ${pO2}/${pHe}`
+  if (pO2 > 21) return `EAN${pO2}`
   return 'Air'
 }
 
