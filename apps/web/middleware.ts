@@ -1,7 +1,12 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-const PROTECTED = ['/profile', '/log-dive', '/planner']
+// Prefix-matched. /profile is deliberately NOT here as a bare prefix: public
+// diver profiles live at /profile/[username], so only the exact own-profile
+// page and /profile/edit are guarded. Usernames can never collide with 'edit'
+// (reserved in the users_username_check constraint).
+const PROTECTED = ['/log-dive', '/planner', '/profile/edit']
+const PROTECTED_EXACT = ['/profile']
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -33,7 +38,7 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  if (!user && PROTECTED.some((p) => pathname.startsWith(p))) {
+  if (!user && (PROTECTED.some((p) => pathname.startsWith(p)) || PROTECTED_EXACT.includes(pathname))) {
     const loginUrl = request.nextUrl.clone()
     loginUrl.pathname = '/auth/sign-in'
     loginUrl.searchParams.set('next', pathname)

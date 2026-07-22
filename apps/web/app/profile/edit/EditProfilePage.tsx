@@ -36,6 +36,7 @@ export function EditProfilePage({ user }: Props) {
   const router = useRouter()
 
   const [displayName, setDisplayName] = useState(user.display_name ?? '')
+  const [username, setUsername] = useState(user.username ?? '')
   const [bio, setBio] = useState(user.bio ?? '')
   const [homeCountry, setHomeCountry] = useState(user.home_country ?? '')
   const [avatarUrl, setAvatarUrl] = useState(user.avatar_url ?? '')
@@ -49,10 +50,18 @@ export function EditProfilePage({ user }: Props) {
     setError(null)
     setSaved(false)
 
+    const uname = username.trim().toLowerCase()
+    if (uname && !/^[a-z0-9_]{3,24}$/.test(uname)) {
+      setError('Username must be 3–24 characters: a–z, 0–9, underscore.')
+      setLoading(false)
+      return
+    }
+
     const supabase = createClient()
     const { error: err } = await updateUserProfile(
       user.id,
       {
+        ...(uname && uname !== user.username ? { username: uname } : {}),
         display_name: displayName.trim() || null,
         bio: bio.trim() || null,
         home_country: homeCountry.trim() || null,
@@ -160,6 +169,21 @@ export function EditProfilePage({ user }: Props) {
             maxLength={80}
             style={INPUT_STYLE}
           />
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <div style={LABEL_STYLE}>Username</div>
+          <input
+            type="text"
+            placeholder="username"
+            value={username}
+            onChange={e => setUsername(e.target.value)}
+            maxLength={24}
+            style={{ ...INPUT_STYLE, fontFamily: "'IBM Plex Mono', monospace" }}
+          />
+          <div className="font-mono" style={{ fontSize: '10px', color: 'var(--tx3)' }}>
+            Public profile: /profile/{username.trim().toLowerCase() || '…'}
+          </div>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>

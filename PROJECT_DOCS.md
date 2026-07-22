@@ -132,7 +132,7 @@ Without the Mapbox token the map logs `NEXT_PUBLIC_MAPBOX_TOKEN not set` and ren
 
 ## 5. Database Schema
 
-### Tables (11) — as defined in `supabase/migrations/`
+### Tables (12) — as defined in `supabase/migrations/`
 
 | Table | Purpose |
 |-------|---------|
@@ -147,6 +147,7 @@ Without the Mapbox token the map logs `NEXT_PUBLIC_MAPBOX_TOKEN not set` and ren
 | `species` | Marine life catalog |
 | `species_sightings` | Species seen at sites |
 | `wishlists` | User saved sites |
+| `dive_plans` | Saved Tech Planner runs (inputs + result snapshot); owner-only RLS |
 
 **[was wrong]** The previous revision listed `dive_logs` (actual name: `dives`), `photos`
 (actual: `site_photos`), and `operator_follows` — **no such table exists** in either migration.
@@ -245,7 +246,8 @@ All 20 page routes plus one route handler, as they exist on disk:
 | `/species` | No | — |
 | `/species/[slug]` | No | — |
 | `/planner` | Yes | **middleware** |
-| `/profile` | Yes | **middleware** |
+| `/profile` | Yes | **middleware** (exact match) |
+| `/profile/[username]` | No | — public diver profile |
 | `/profile/edit` | Yes | **middleware** |
 | `/log-dive` | Yes | **middleware** |
 | `/logbook` | Yes | in-page redirect |
@@ -257,8 +259,10 @@ All 20 page routes plus one route handler, as they exist on disk:
 | `/auth/update-password` | No | — |
 | `/auth/callback` | No | route handler (OAuth/PKCE exchange) |
 
-Two different guard mechanisms are in play. `middleware.ts` protects exactly
-`['/profile', '/log-dive', '/planner']` (prefix match, so `/profile/edit` is covered).
+Two different guard mechanisms are in play. `middleware.ts` protects `/log-dive`, `/planner`
+and `/profile/edit` by prefix plus `/profile` by exact match — exact, because public diver
+profiles live under `/profile/[username]`. Usernames can never collide with the static
+routes: `edit`, `plans` and `settings` are reserved in the `users.username` check constraint.
 Everything else authenticates inside the page and redirects to `/auth/sign-in?next=…`.
 If you add a protected route, pick one mechanism deliberately — the middleware list is easy to forget.
 
@@ -535,6 +539,8 @@ on Site URL, unauthenticated, which reads as "login did nothing".
 
 ## 15. Immediate Action Items
 
-1. Decide on `dive_sites_near`: wire it into the map's viewport query, or drop it and the index.
-2. Wire up Stripe for the premium paywall (Phase 5).
-3. Build and run the mobile app — the Expo project has never been started (§6).
+1. **Apply `20260722000000_dive_plans_usernames.sql`** — Save Plan and /profile/[username]
+   404 until the `dive_plans` table and `users.username` exist. SQL editor or `db push`.
+2. Decide on `dive_sites_near`: wire it into the map's viewport query, or drop it and the index.
+3. Wire up Stripe for the premium paywall (Phase 5).
+4. Build and run the mobile app — the Expo project has never been started (§6).
