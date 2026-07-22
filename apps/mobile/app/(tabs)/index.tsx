@@ -122,6 +122,7 @@ export default function DiscoverScreen() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        style={s.hScroll}
         contentContainerStyle={s.chips}
       >
         {TYPES.map(t => {
@@ -153,6 +154,7 @@ export default function DiscoverScreen() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        style={s.hScroll}
         contentContainerStyle={s.cardList}
       >
         {sites.length === 0 && !loading ? (
@@ -209,6 +211,9 @@ const s = StyleSheet.create({
     color: colors.tx,
     borderWidth: 1,
     borderColor: colors.line,
+  },
+  hScroll: {
+    flexGrow: 0,
   },
   chips: {
     paddingHorizontal: 14,
