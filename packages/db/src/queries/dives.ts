@@ -12,6 +12,9 @@ export interface InsertDiveInput {
   gasO2?: number | null
   gasHe?: number | null
   vizM?: number | null
+  currentLevel?: Database['public']['Enums']['current_level'] | null
+  tempSurfaceC?: number | null
+  tempBottomC?: number | null
   buddy?: string | null
   notes?: string | null
   rating?: number | null
@@ -30,6 +33,9 @@ export async function insertDive(
     gas_o2: input.gasO2 ?? null,
     gas_he: input.gasHe ?? null,
     viz_m: input.vizM ?? null,
+    current_level: input.currentLevel ?? null,
+    temp_surface_c: input.tempSurfaceC ?? null,
+    temp_bottom_c: input.tempBottomC ?? null,
     buddy: input.buddy ?? null,
     notes: input.notes ?? null,
     rating: input.rating ?? null,

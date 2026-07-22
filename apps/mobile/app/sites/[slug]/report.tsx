@@ -15,7 +15,7 @@ import { insertConditionsReport } from '@divemap/db'
 import { createClient } from '../../../lib/supabase'
 import { colors } from '@divemap/ui'
 
-type Step = 1 | 2 | 3 | 'done'
+type Step = 1 | 2 | 3 | 4 | 'done'
 
 const CURRENTS = [
   { glyph: '—', label: 'None', desc: 'Slack water' },
@@ -36,7 +36,7 @@ const VIZ_WORDS = (m: number) => {
 function StepDots({ current }: { current: Step }) {
   return (
     <View style={s.dots}>
-      {([1, 2, 3] as const).map(n => (
+      {([1, 2, 3, 4] as const).map(n => (
         <View key={n} style={[s.dot, (current === 'done' || n <= (current as number)) && s.dotActive]} />
       ))}
     </View>
@@ -127,8 +127,8 @@ export default function ReportScreen() {
         {/* Step 1: Visibility */}
         {step === 1 && (
           <View style={s.stepWrap}>
-            <Text style={s.stepTitle}>Visibility</Text>
-            <Text style={s.stepSub}>How far could you see?</Text>
+            <Text style={s.stepTitle}>How was the viz?</Text>
+            <Text style={s.stepSub}>Horizontal distance you could see at depth.</Text>
 
             <View style={s.vizDisplay}>
               <Text style={s.vizNum}>{vizM}</Text>
@@ -157,8 +157,8 @@ export default function ReportScreen() {
         {/* Step 2: Current */}
         {step === 2 && (
           <View style={s.stepWrap}>
-            <Text style={s.stepTitle}>Current</Text>
-            <Text style={s.stepSub}>How strong was the current?</Text>
+            <Text style={s.stepTitle}>Current?</Text>
+            <Text style={s.stepSub}>How strong was it at depth?</Text>
 
             {CURRENTS.map((c, i) => (
               <TouchableOpacity
@@ -180,8 +180,8 @@ export default function ReportScreen() {
         {/* Step 3: Temperature */}
         {step === 3 && (
           <View style={s.stepWrap}>
-            <Text style={s.stepTitle}>Temperature</Text>
-            <Text style={s.stepSub}>Surface and bottom temp (°C)</Text>
+            <Text style={s.stepTitle}>Water temp?</Text>
+            <Text style={s.stepSub}>In °C, at the surface and at depth.</Text>
 
             <View style={s.tempRow}>
               <View style={s.tempField}>
@@ -217,12 +217,19 @@ export default function ReportScreen() {
               </View>
             )}
 
-            <Text style={s.fieldLabel}>NOTES</Text>
+          </View>
+        )}
+
+        {/* Step 4: Anything else (design screen 04) */}
+        {step === 4 && (
+          <View style={s.stepWrap}>
+            <Text style={s.stepTitle}>Anything else?</Text>
+            <Text style={s.stepSub}>Optional — surge, entry conditions, what you saw.</Text>
             <TextInput
               style={s.notesInput}
               value={notes}
               onChangeText={setNotes}
-              placeholder="Any unusual conditions, notable marine life…"
+              placeholder="Current direction, surge at entry, what you saw…"
               placeholderTextColor={colors.tx3}
               multiline
             />
@@ -231,7 +238,7 @@ export default function ReportScreen() {
 
         {/* Nav buttons */}
         <View style={s.navRow}>
-          {step < 3 ? (
+          {step < 4 ? (
             <TouchableOpacity
               onPress={() => setStep(prev => (prev as number) + 1 as Step)}
               style={s.btn}
@@ -329,7 +336,7 @@ const s = StyleSheet.create({
   thermoclineText: { fontSize: 12, color: colors.warn, fontWeight: '600', flex: 1 },
   notesInput: {
     backgroundColor: colors.card, borderRadius: 12, borderWidth: 1, borderColor: colors.line,
-    padding: 12, fontSize: 13.5, color: colors.tx, height: 90, textAlignVertical: 'top',
+    padding: 13, fontSize: 13.5, color: colors.tx, height: 128, textAlignVertical: 'top',
   },
   navRow: { marginTop: 8 },
   btn: { backgroundColor: colors.acc, borderRadius: 14, padding: 15, alignItems: 'center' },
