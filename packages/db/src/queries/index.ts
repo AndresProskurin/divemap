@@ -43,7 +43,8 @@ export {
   getActivityFeed,
 } from './social'
 export type { FollowCounts, InsiderNote, ActivityItem, ActivityKind, HomeFeedItem } from './social'
-export { getHomeFeed, getPhotoPost, getNotePost } from './social'
+export { getHomeFeed, getPhotoPost, getNotePost, getPostComments, addPostComment, deletePostComment } from './social'
+export type { PostComment } from './social'
 export type { PhotoPost, NotePost, PostDive } from './social'
 export { getUserPlans, insertPlan, deletePlan } from './plans'
 export type { DivePlanWithSite } from './plans'

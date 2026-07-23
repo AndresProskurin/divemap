@@ -17,11 +17,13 @@ import {
   StyleSheet,
   Platform,
   ActivityIndicator,
+  TextInput,
+  KeyboardAvoidingView,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { getPhotoPost, getNotePost } from '@divemap/db'
-import type { PhotoPost, NotePost, PostDive } from '@divemap/db'
+import { getPhotoPost, getNotePost, getPostComments, addPostComment, deletePostComment } from '@divemap/db'
+import type { PhotoPost, NotePost, PostDive, PostComment } from '@divemap/db'
 import { createClient } from '../../../lib/supabase'
 import { colors } from '@divemap/ui'
 
@@ -80,13 +82,32 @@ export default function PostScreen() {
 
   const [loading, setLoading] = useState(true)
   const [post, setPost] = useState<PhotoPost | NotePost | null>(null)
+  const [comments, setComments] = useState<PostComment[]>([])
+  const [viewerId, setViewerId] = useState<string | null>(null)
+  const [draft, setDraft] = useState('')
+  const [sending, setSending] = useState(false)
 
   useEffect(() => {
     if (!id || !kind) return
     const supabase = createClient()
     const fetcher = kind === 'photo' ? getPhotoPost : getNotePost
     fetcher(id, supabase).then((p) => { setPost(p); setLoading(false) })
+    getPostComments(kind as 'photo' | 'note', id, supabase).then(setComments).catch(() => {})
+    supabase.auth.getUser().then(({ data }) => setViewerId(data.user?.id ?? null))
   }, [kind, id])
+
+  async function sendComment() {
+    const body = draft.trim()
+    if (!body || !viewerId || !id || sending) return
+    setSending(true)
+    const supabase = createClient()
+    const { error } = await addPostComment(kind as 'photo' | 'note', id, viewerId, body, supabase)
+    if (!error) {
+      setDraft('')
+      setComments(await getPostComments(kind as 'photo' | 'note', id, supabase))
+    }
+    setSending(false)
+  }
 
   if (loading) {
     return (
@@ -165,7 +186,85 @@ export default function PostScreen() {
             )}
           </View>
         )}
+
+        {/* ── Comments ── */}
+        <View style={s.commentsWrap}>
+          <Text style={s.commentsTitle}>
+            {comments.length === 0 ? 'COMMENTS' : `COMMENTS · ${comments.length}`}
+          </Text>
+          {comments.length === 0 && (
+            <Text style={s.commentsEmpty}>Be the first to comment.</Text>
+          )}
+          {comments.map(c => {
+            const name = c.user?.username ? `@${c.user.username}` : c.user?.display_name ?? 'diver'
+            return (
+              <View key={c.id} style={s.commentRow}>
+                <TouchableOpacity
+                  onPress={() => c.user?.username && router.push(`/diver/${c.user.username}`)}
+                  style={s.commentAvatar}
+                >
+                  {c.user?.avatar_url ? (
+                    <Image source={{ uri: c.user.avatar_url }} style={{ width: '100%', height: '100%' }} />
+                  ) : (
+                    <Text style={s.commentAvatarLetter}>{(name[1] ?? '?').toUpperCase()}</Text>
+                  )}
+                </TouchableOpacity>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={s.commentBody}>
+                    <Text style={s.commentWho}>{name}  </Text>
+                    {c.body}
+                  </Text>
+                  <Text style={s.commentTime}>
+                    {new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </Text>
+                </View>
+                {c.user_id === viewerId && (
+                  <TouchableOpacity
+                    onPress={async () => {
+                      setComments(prev => prev.filter(x => x.id !== c.id))
+                      await deletePostComment(c.id, createClient())
+                    }}
+                  >
+                    <Text style={{ fontSize: 15, color: colors.tx3, paddingHorizontal: 4 }}>×</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            )
+          })}
+        </View>
       </ScrollView>
+
+      {/* Composer */}
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        {viewerId ? (
+          <View style={[s.composer, { paddingBottom: Math.max(insets.bottom, 10) }]}>
+            <TextInput
+              style={s.composerInput}
+              value={draft}
+              onChangeText={setDraft}
+              placeholder="Add a comment…"
+              placeholderTextColor={colors.tx3}
+              maxLength={500}
+              onSubmitEditing={sendComment}
+              returnKeyType="send"
+            />
+            <TouchableOpacity
+              onPress={sendComment}
+              disabled={sending || !draft.trim()}
+              style={[s.composerSend, (!draft.trim() || sending) && { opacity: 0.4 }]}
+            >
+              <Text style={s.composerSendText}>{sending ? '…' : '↑'}</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={[s.composer, { paddingBottom: Math.max(insets.bottom, 10), justifyContent: 'center' }]}
+            onPress={() => router.push('/auth/sign-in')}
+          >
+            <Text style={{ fontSize: 12.5, color: colors.acc, fontWeight: '600' }}>Sign in to comment</Text>
+          </TouchableOpacity>
+        )}
+      </KeyboardAvoidingView>
     </View>
   )
 }
@@ -207,4 +306,30 @@ const s = StyleSheet.create({
   noteMark: { fontSize: 10, fontWeight: '700', color: colors.acc, fontFamily: MONO, letterSpacing: 1.4 },
   noteBody: { fontSize: 14.5, color: colors.tx, lineHeight: 23, fontWeight: '500' },
   notePending: { fontSize: 9, color: colors.warn, fontFamily: MONO, letterSpacing: 0.8 },
+  commentsWrap: { paddingHorizontal: 16, paddingTop: 6, gap: 12 },
+  commentsTitle: { fontSize: 9, fontWeight: '600', color: colors.tx3, fontFamily: MONO, letterSpacing: 1.4 },
+  commentsEmpty: { fontSize: 12, color: colors.tx3, fontStyle: 'italic' },
+  commentRow: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
+  commentAvatar: {
+    width: 28, height: 28, borderRadius: 14, overflow: 'hidden',
+    backgroundColor: colors.accDeep, alignItems: 'center', justifyContent: 'center',
+  },
+  commentAvatarLetter: { fontSize: 11, fontWeight: '700', color: '#caf0f8' },
+  commentWho: { fontWeight: '700', color: colors.tx },
+  commentBody: { fontSize: 12.5, color: colors.tx2, lineHeight: 18 },
+  commentTime: { fontSize: 8.5, color: colors.tx3, fontFamily: MONO, marginTop: 2 },
+  composer: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingHorizontal: 14, paddingTop: 10,
+    borderTopWidth: 1, borderTopColor: colors.line, backgroundColor: colors.bg2,
+  },
+  composerInput: {
+    flex: 1, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line,
+    borderRadius: 999, paddingHorizontal: 14, paddingVertical: 9, fontSize: 13, color: colors.tx,
+  },
+  composerSend: {
+    width: 36, height: 36, borderRadius: 18, backgroundColor: colors.acc,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  composerSendText: { fontSize: 16, fontWeight: '700', color: '#02222e' },
 })

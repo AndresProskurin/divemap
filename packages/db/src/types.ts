@@ -761,6 +761,55 @@ export type Database = {
           },
         ]
       }
+      post_comments: {
+        Row: {
+          id: string
+          user_id: string
+          photo_id: string | null
+          note_id: string | null
+          body: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          photo_id?: string | null
+          note_id?: string | null
+          body: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          photo_id?: string | null
+          note_id?: string | null
+          body?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'post_comments_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'post_comments_photo_id_fkey'
+            columns: ['photo_id']
+            isOneToOne: false
+            referencedRelation: 'site_photos'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'post_comments_note_id_fkey'
+            columns: ['note_id']
+            isOneToOne: false
+            referencedRelation: 'insider_notes'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       wishlists: {
         Row: {
           id: string

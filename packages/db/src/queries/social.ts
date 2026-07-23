@@ -212,6 +212,8 @@ export interface HomeFeedItem {
 
 interface HomeFeedOptions {
   actorIds?: string[]
+  /** Restrict to one site (the site page's community feed). */
+  siteId?: string
   limit?: number
 }
 
@@ -233,6 +235,7 @@ export async function getHomeFeed(
     .order('created_at', { ascending: false })
     .limit(limit)
   if (ids) photos = photos.in('user_id', ids)
+  if (options.siteId) photos = photos.eq('site_id', options.siteId)
 
   let notes = supabase
     .from('insider_notes')
@@ -241,6 +244,7 @@ export async function getHomeFeed(
     .order('created_at', { ascending: false })
     .limit(limit)
   if (ids) notes = notes.in('user_id', ids)
+  if (options.siteId) notes = notes.eq('site_id', options.siteId)
 
   const [p, n] = await Promise.all([photos, notes])
 
@@ -343,4 +347,48 @@ export async function getNotePost(id: string, supabase: Client): Promise<NotePos
     .maybeSingle()
   if (!data) return null
   return { kind: 'note', ...(data as object) } as unknown as NotePost
+}
+
+// ─── Comments ────────────────────────────────────────────────────────────────
+
+export interface PostComment {
+  id: string
+  body: string
+  created_at: string
+  user_id: string
+  user: { username: string | null; display_name: string | null; avatar_url: string | null } | null
+}
+
+export async function getPostComments(
+  kind: 'photo' | 'note',
+  postId: string,
+  supabase: Client,
+): Promise<PostComment[]> {
+  const { data } = await supabase
+    .from('post_comments')
+    .select('id, body, created_at, user_id, user:user_id(username, display_name, avatar_url)')
+    .eq(kind === 'photo' ? 'photo_id' : 'note_id', postId)
+    .order('created_at', { ascending: true })
+    .limit(100)
+  return (data ?? []) as unknown as PostComment[]
+}
+
+export async function addPostComment(
+  kind: 'photo' | 'note',
+  postId: string,
+  userId: string,
+  body: string,
+  supabase: Client,
+): Promise<{ error: string | null }> {
+  const { error } = await supabase.from('post_comments').insert({
+    user_id: userId,
+    body: body.trim(),
+    photo_id: kind === 'photo' ? postId : null,
+    note_id: kind === 'note' ? postId : null,
+  })
+  return { error: error?.message ?? null }
+}
+
+export async function deletePostComment(commentId: string, supabase: Client): Promise<void> {
+  await supabase.from('post_comments').delete().eq('id', commentId)
 }

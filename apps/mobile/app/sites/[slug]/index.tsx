@@ -19,8 +19,8 @@ import type { SitePhoto } from '@divemap/db'
 import type { Tables } from '@divemap/db'
 import { createClient } from '../../../lib/supabase'
 import { pickPhoto, uploadSitePhoto } from '../../../lib/photos'
-import { getSiteInsiderNotes, submitInsiderNote } from '@divemap/db'
-import type { InsiderNote } from '@divemap/db'
+import { getSiteInsiderNotes, submitInsiderNote, getHomeFeed } from '@divemap/db'
+import type { InsiderNote, HomeFeedItem } from '@divemap/db'
 import type { DiveSite, ConditionsReport } from '@divemap/db'
 import { colors } from '@divemap/ui'
 
@@ -50,6 +50,10 @@ export default function SiteDetailScreen() {
   const [operators, setOperators] = useState<Tables<'operators'>[]>([])
   const [photos, setPhotos] = useState<SitePhoto[]>([])
   const [uploading, setUploading] = useState(false)
+  const [siteFeed, setSiteFeed] = useState<HomeFeedItem[]>([])
+  const [viewerId, setViewerId] = useState<string | null>(null)
+  const [pendingPhoto, setPendingPhoto] = useState<import('../../../lib/photos').PickedPhoto | null>(null)
+  const [photoCaption, setPhotoCaption] = useState('')
   const [ugcNotes, setUgcNotes] = useState<InsiderNote[]>([])
   const [noteDraft, setNoteDraft] = useState('')
   const [noteOpen, setNoteOpen] = useState(false)
@@ -74,6 +78,8 @@ export default function SiteDetailScreen() {
         getSiteOperators(s.id, supabase).then(setOperators).catch(() => {})
         getSitePhotos(s.id, supabase).then(setPhotos).catch(() => {})
         getSiteInsiderNotes(s.id, supabase).then(setUgcNotes).catch(() => {})
+        getHomeFeed(supabase, { siteId: s.id, limit: 20 }).then(setSiteFeed).catch(() => {})
+        supabase.auth.getUser().then(({ data }) => setViewerId(data.user?.id ?? null))
         const { data: { user } } = await supabase.auth.getUser()
         if (user) {
           const item = await getWishlistItem(user.id, s.id, supabase)
@@ -285,17 +291,7 @@ export default function SiteDetailScreen() {
               onPress={async () => {
                 if (!site) return
                 const picked = await pickPhoto()
-                if (!picked) return
-                setUploading(true)
-                try {
-                  await uploadSitePhoto(picked, site.id)
-                  const supabase = createClient()
-                  setPhotos(await getSitePhotos(site.id, supabase))
-                } catch (e) {
-                  Alert.alert('Upload failed', e instanceof Error ? e.message : 'Try again.')
-                } finally {
-                  setUploading(false)
-                }
+                if (picked) { setPendingPhoto(picked); setPhotoCaption('') }
               }}
               style={s.photoAdd}
             >
@@ -303,11 +299,94 @@ export default function SiteDetailScreen() {
                 ? <ActivityIndicator size="small" color={colors.acc} />
                 : <Text style={s.photoAddText}>＋</Text>}
             </TouchableOpacity>
-            {photos.map(ph => (
-              <Image key={ph.id} source={{ uri: ph.url }} style={s.photoThumb} />
+            {photos.filter(ph => ph.user_id === viewerId).map(ph => (
+              <TouchableOpacity key={ph.id} onPress={() => router.push(`/post/photo/${ph.id}`)}>
+                <Image source={{ uri: ph.url }} style={s.photoThumb} />
+              </TouchableOpacity>
             ))}
           </ScrollView>
         </View>
+
+        {/* Caption sheet for a staged photo */}
+        {pendingPhoto && (
+          <View style={s.section}>
+            <Text style={s.sectionTitle}>NEW POST</Text>
+            <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
+              <Image source={{ uri: pendingPhoto.uri }} style={s.pendingThumb} />
+              <View style={{ flex: 1, gap: 8 }}>
+                <TextInput
+                  style={s.captionInput}
+                  value={photoCaption}
+                  onChangeText={setPhotoCaption}
+                  placeholder="Write a caption… viz, what you saw, tips"
+                  placeholderTextColor={colors.tx3}
+                  multiline
+                  maxLength={500}
+                />
+                <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+                  <TouchableOpacity
+                    disabled={uploading}
+                    style={s.ugcSubmitBtn}
+                    onPress={async () => {
+                      if (!site || !pendingPhoto) return
+                      setUploading(true)
+                      try {
+                        await uploadSitePhoto(pendingPhoto, site.id, photoCaption)
+                        const supabase = createClient()
+                        setPhotos(await getSitePhotos(site.id, supabase))
+                        setSiteFeed(await getHomeFeed(supabase, { siteId: site.id, limit: 20 }))
+                        setPendingPhoto(null)
+                        setPhotoCaption('')
+                      } catch (e) {
+                        Alert.alert('Upload failed', e instanceof Error ? e.message : 'Try again.')
+                      } finally {
+                        setUploading(false)
+                      }
+                    }}
+                  >
+                    <Text style={s.ugcSubmitText}>{uploading ? 'Posting…' : 'Post'}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => setPendingPhoto(null)}>
+                    <Text style={{ fontSize: 12, color: colors.tx3 }}>Cancel</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* Community posts at this site */}
+        {siteFeed.length > 0 && (
+          <View style={s.section}>
+            <Text style={s.sectionTitle}>POSTS AT THIS SITE · {siteFeed.length}</Text>
+            {siteFeed.map(item => {
+              const who = item.user?.username ? `@${item.user.username}` : item.user?.display_name ?? 'diver'
+              return (
+                <TouchableOpacity
+                  key={`${item.kind}-${item.id}`}
+                  style={s.sitePostRow}
+                  activeOpacity={0.8}
+                  onPress={() => router.push(`/post/${item.kind}/${item.id}`)}
+                >
+                  {item.kind === 'photo' && item.photoUrl ? (
+                    <Image source={{ uri: item.photoUrl }} style={s.sitePostThumb} />
+                  ) : (
+                    <View style={[s.sitePostThumb, s.sitePostNoteThumb]}>
+                      <Text style={{ fontSize: 15, color: colors.acc }}>◆</Text>
+                    </View>
+                  )}
+                  <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
+                    <Text style={s.sitePostWho} numberOfLines={1}>{who}</Text>
+                    <Text style={s.sitePostText} numberOfLines={2}>
+                      {item.text ?? (item.kind === 'photo' ? 'Photo' : '')}
+                    </Text>
+                  </View>
+                  <Text style={s.sitePostChevron}>›</Text>
+                </TouchableOpacity>
+              )
+            })}
+          </View>
+        )}
 
         {/* Operators (dive shops & clubs running this site) */}
         {operators.length > 0 && (
@@ -413,6 +492,21 @@ const s = StyleSheet.create({
   },
   photoAddText: { fontSize: 22, color: colors.acc },
   photoThumb: { width: 96, height: 96, borderRadius: 12, backgroundColor: colors.card },
+  pendingThumb: { width: 84, height: 84, borderRadius: 12, backgroundColor: colors.card },
+  captionInput: {
+    backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, borderRadius: 12,
+    padding: 11, fontSize: 13, color: colors.tx, minHeight: 64, textAlignVertical: 'top',
+  },
+  sitePostRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 11, marginTop: 8,
+    backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line,
+    borderRadius: 12, padding: 10,
+  },
+  sitePostThumb: { width: 52, height: 52, borderRadius: 10, backgroundColor: colors.bg2 },
+  sitePostNoteThumb: { alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,180,216,0.08)' },
+  sitePostWho: { fontSize: 12, fontWeight: '700', color: colors.tx },
+  sitePostText: { fontSize: 11, color: colors.tx3, fontWeight: '500', lineHeight: 15 },
+  sitePostChevron: { fontSize: 18, color: colors.tx3 },
   opCard: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line,
