@@ -120,7 +120,7 @@ function ReportCard({ item, onPress }: { item: ReportRow; onPress: () => void })
   )
 }
 
-function ActivityRow({ item, onPress }: { item: ActivityItem; onPress: () => void }) {
+function ActivityRow({ item, onPress, onPressUser }: { item: ActivityItem; onPress: () => void; onPressUser: () => void }) {
   const meta = KIND_META[item.kind]
   const who = item.user?.username ? `@${item.user.username}` : item.user?.display_name ?? 'A diver'
   return (
@@ -129,7 +129,9 @@ function ActivityRow({ item, onPress }: { item: ActivityItem; onPress: () => voi
         <View style={s.cardHeader}>
           <View style={s.cardHeaderLeft}>
             <Text style={s.activityLine} numberOfLines={1}>
-              <Text style={{ color: colors.tx }}>{who}</Text>
+              <Text style={{ color: item.user?.username ? colors.acc : colors.tx }} onPress={item.user?.username ? onPressUser : undefined}>
+                {who}
+              </Text>
               <Text style={{ color: colors.tx3 }}> {meta.verb}</Text>
             </Text>
             <Text style={s.siteName} numberOfLines={1}>
@@ -193,6 +195,32 @@ export default function ConditionsScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode])
 
+  // Realtime (task 5.3): new reports/dives/photos refresh whichever view is
+  // open. Events carry no joined site/user, so we refetch instead of patching
+  // rows in — debounced, a burst of inserts costs one round-trip.
+  useEffect(() => {
+    const supabase = createClient()
+    let timer: ReturnType<typeof setTimeout> | null = null
+    const bump = () => {
+      if (timer) clearTimeout(timer)
+      timer = setTimeout(() => {
+        if (mode === 'reports') void fetchReports()
+        else void fetchFeed(mode)
+      }, 500)
+    }
+    const channel = supabase
+      .channel('activity-feed')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'conditions_reports' }, bump)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'dives' }, bump)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'site_photos' }, bump)
+      .subscribe()
+    return () => {
+      if (timer) clearTimeout(timer)
+      void supabase.removeChannel(channel)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, fetchFeed])
+
   const onRefresh = useCallback(() => {
     setRefreshing(true)
     if (mode === 'reports') void fetchReports()
@@ -242,6 +270,7 @@ export default function ConditionsScreen() {
             <ActivityRow
               item={item}
               onPress={() => { if (item.site) router.push(`/sites/${item.site.slug}`) }}
+              onPressUser={() => { if (item.user?.username) router.push(`/diver/${item.user.username}`) }}
             />
           )}
           ListEmptyComponent={
