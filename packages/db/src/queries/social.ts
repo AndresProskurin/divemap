@@ -191,3 +191,76 @@ export async function getActivityFeed(
     .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
     .slice(0, limit)
 }
+
+// ─── Home community feed (photos + approved notes) ───────────────────────────
+
+export interface HomeFeedItem {
+  kind: 'photo' | 'note'
+  at: string
+  user: { username: string | null; display_name: string | null; avatar_url: string | null } | null
+  site: { name: string; slug: string; country: string | null } | null
+  /** Photo URL for kind 'photo'. */
+  photoUrl?: string
+  /** Caption (photo) or note body. */
+  text?: string
+}
+
+interface HomeFeedOptions {
+  actorIds?: string[]
+  limit?: number
+}
+
+/**
+ * The Discover-tab community stream: site photos and approved insider notes,
+ * newest first, optionally restricted to followed divers. Instagram-shaped —
+ * every item is attributable (avatar + username + site).
+ */
+export async function getHomeFeed(
+  supabase: Client,
+  options: HomeFeedOptions = {},
+): Promise<HomeFeedItem[]> {
+  const limit = options.limit ?? 30
+  const ids = options.actorIds
+
+  let photos = supabase
+    .from('site_photos')
+    .select('created_at, url, caption, user:user_id(username, display_name, avatar_url), site:site_id(name, slug, country)')
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (ids) photos = photos.in('user_id', ids)
+
+  let notes = supabase
+    .from('insider_notes')
+    .select('created_at, body, status, user:user_id(username, display_name, avatar_url), site:site_id(name, slug, country)')
+    .eq('status', 'approved')
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (ids) notes = notes.in('user_id', ids)
+
+  const [p, n] = await Promise.all([photos, notes])
+
+  type JUser = { username: string | null; display_name: string | null; avatar_url: string | null }
+  type JSite = { name: string; slug: string; country: string | null }
+
+  const items: HomeFeedItem[] = [
+    ...(p.data ?? []).map((row) => ({
+      kind: 'photo' as const,
+      at: row.created_at,
+      user: row.user as unknown as JUser | null,
+      site: row.site as unknown as JSite | null,
+      photoUrl: row.url,
+      text: row.caption ?? undefined,
+    })),
+    ...(n.data ?? []).map((row) => ({
+      kind: 'note' as const,
+      at: row.created_at,
+      user: row.user as unknown as JUser | null,
+      site: row.site as unknown as JSite | null,
+      text: row.body,
+    })),
+  ]
+
+  return items
+    .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
+    .slice(0, limit)
+}

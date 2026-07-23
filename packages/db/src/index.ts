@@ -48,7 +48,8 @@ export {
   submitInsiderNote,
   getActivityFeed,
 } from './queries/social'
-export type { FollowCounts, InsiderNote, ActivityItem, ActivityKind } from './queries/social'
+export type { FollowCounts, InsiderNote, ActivityItem, ActivityKind, HomeFeedItem } from './queries/social'
+export { getHomeFeed } from './queries/social'
 export { getUserPlans, insertPlan, deletePlan } from './queries/plans'
 export type { DivePlanWithSite } from './queries/plans'
 export type { DiveWithSite, WishlistSite, UpdateProfileInput } from './queries/profile'

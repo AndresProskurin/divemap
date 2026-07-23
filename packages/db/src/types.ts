@@ -171,6 +171,8 @@ export type Database = {
           rating: number | null
           tech_dives_guided: number
           website: string | null
+          email: string | null
+          phone: string | null
           created_by: string | null
           created_at: string
           updated_at: string
@@ -189,6 +191,8 @@ export type Database = {
           rating?: number | null
           tech_dives_guided?: number
           website?: string | null
+          email?: string | null
+          phone?: string | null
           created_by?: string | null
           created_at?: string
           updated_at?: string
@@ -207,6 +211,8 @@ export type Database = {
           rating?: number | null
           tech_dives_guided?: number
           website?: string | null
+          email?: string | null
+          phone?: string | null
           created_by?: string | null
           created_at?: string
           updated_at?: string

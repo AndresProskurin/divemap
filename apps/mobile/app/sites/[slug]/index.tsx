@@ -5,6 +5,7 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
+  Linking,
   StyleSheet,
   Platform,
   ActivityIndicator,
@@ -329,6 +330,29 @@ export default function SiteDetailScreen() {
                 {op.rating != null && <Text style={s.opRating}>★ {op.rating.toFixed(1)}</Text>}
               </View>
             ))}
+            {/* Contact actions for the listed operators */}
+            {operators.map(op => (op.phone || op.email || op.website) && (
+              <View key={`${op.id}-contacts`} style={s.opContactRow}>
+                <Text style={s.opContactName} numberOfLines={1}>{op.name}</Text>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  {op.phone && (
+                    <TouchableOpacity style={s.opContactBtn} onPress={() => Linking.openURL(`tel:${op.phone!.replace(/\s+/g, '')}`)}>
+                      <Text style={s.opContactBtnText}>📞 Call</Text>
+                    </TouchableOpacity>
+                  )}
+                  {op.email && (
+                    <TouchableOpacity style={s.opContactBtn} onPress={() => Linking.openURL(`mailto:${op.email}`)}>
+                      <Text style={s.opContactBtnText}>✉️ Email</Text>
+                    </TouchableOpacity>
+                  )}
+                  {op.website && (
+                    <TouchableOpacity style={s.opContactBtn} onPress={() => Linking.openURL(op.website!)}>
+                      <Text style={s.opContactBtnText}>🌐 Web</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+            ))}
           </View>
         )}
 
@@ -403,6 +427,16 @@ const s = StyleSheet.create({
   opBase: { fontSize: 11, color: colors.tx3, fontWeight: '500' },
   opKit: { fontSize: 9.5, color: colors.tx2, fontFamily: Platform.select({ ios: 'Courier New', android: 'monospace' }) },
   opRating: { fontSize: 12, fontWeight: '600', color: colors.tx2 },
+  opContactRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+    marginTop: 8, paddingHorizontal: 2,
+  },
+  opContactName: { flex: 1, fontSize: 10.5, fontWeight: '600', color: colors.tx3 },
+  opContactBtn: {
+    borderWidth: 1, borderColor: colors.line, borderRadius: 999,
+    paddingHorizontal: 11, paddingVertical: 7, backgroundColor: colors.card,
+  },
+  opContactBtnText: { fontSize: 11, fontWeight: '600', color: colors.tx2 },
   screen: {
     flex: 1,
     backgroundColor: colors.bg,

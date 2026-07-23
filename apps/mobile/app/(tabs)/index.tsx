@@ -8,13 +8,71 @@ import {
   StyleSheet,
   ActivityIndicator,
   Platform,
+  FlatList,
+  Image,
+  RefreshControl,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Link } from 'expo-router'
 import { createClient } from '../../lib/supabase'
-import type { SiteListItem, MapSite } from '@divemap/db'
-import { browseSites, getMapSites } from '@divemap/db'
+import type { SiteListItem, MapSite, HomeFeedItem } from '@divemap/db'
+import { browseSites, getMapSites, getHomeFeed, getFollowingIds } from '@divemap/db'
 import { DiscoveryMap } from '../../components/DiscoveryMap'
+import { useRouter } from 'expo-router'
+
+function feedTimeAgo(iso: string): string {
+  const h = Math.floor((Date.now() - new Date(iso).getTime()) / 3_600_000)
+  if (h < 1) return 'just now'
+  if (h < 24) return `${h}h ago`
+  const d = Math.floor(h / 24)
+  if (d < 7) return `${d}d ago`
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
+function FeedCard({ item, onPressUser, onPressSite }: {
+  item: HomeFeedItem
+  onPressUser: () => void
+  onPressSite: () => void
+}) {
+  const who = item.user?.username ? `@${item.user.username}` : item.user?.display_name ?? 'diver'
+  return (
+    <View style={s.feedCard}>
+      {/* Attribution header */}
+      <View style={s.feedHeader}>
+        <TouchableOpacity onPress={onPressUser} style={s.feedAvatarWrap}>
+          {item.user?.avatar_url ? (
+            <Image source={{ uri: item.user.avatar_url }} style={s.feedAvatar} />
+          ) : (
+            <Text style={s.feedAvatarLetter}>{(who[1] ?? who[0] ?? '?').toUpperCase()}</Text>
+          )}
+        </TouchableOpacity>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <TouchableOpacity onPress={onPressUser}>
+            <Text style={s.feedWho} numberOfLines={1}>{who}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onPressSite}>
+            <Text style={s.feedSite} numberOfLines={1}>
+              {item.site?.name ?? 'Unknown site'}{item.site?.country ? ` · ${item.site.country}` : ''}
+            </Text>
+          </TouchableOpacity>
+        </View>
+        <Text style={s.feedTime}>{feedTimeAgo(item.at)}</Text>
+      </View>
+
+      {/* Body */}
+      {item.kind === 'photo' && item.photoUrl ? (
+        <TouchableOpacity activeOpacity={0.9} onPress={onPressSite}>
+          <Image source={{ uri: item.photoUrl }} style={s.feedPhoto} />
+        </TouchableOpacity>
+      ) : null}
+      {item.text ? (
+        <Text style={item.kind === 'note' ? s.feedNoteText : s.feedCaption}>
+          {item.kind === 'note' ? `◆ ${item.text}` : item.text}
+        </Text>
+      ) : null}
+    </View>
+  )
+}
 import { colors } from '@divemap/ui'
 
 const TYPES = ['reef', 'wreck', 'wall', 'cave', 'cenote', 'drift', 'muck'] as const
@@ -68,6 +126,28 @@ export default function DiscoverScreen() {
   const [mapSites, setMapSites] = useState<MapSite[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
+  const router = useRouter()
+
+  // Community feed (photos + approved notes)
+  const [feed, setFeed] = useState<HomeFeedItem[]>([])
+  const [feedMode, setFeedMode] = useState<'all' | 'following'>('all')
+  const [feedRefreshing, setFeedRefreshing] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    async function loadFeed() {
+      const supabase = createClient()
+      let actorIds: string[] | undefined
+      if (feedMode === 'following') {
+        const { data: { user } } = await supabase.auth.getUser()
+        actorIds = user ? await getFollowingIds(user.id, supabase) : []
+      }
+      const items = await getHomeFeed(supabase, { actorIds })
+      if (!cancelled) { setFeed(items); setFeedRefreshing(false) }
+    }
+    void loadFeed()
+    return () => { cancelled = true }
+  }, [feedMode, feedRefreshing])
 
   // Map pins load once — the map shows the whole catalogue, not the filter.
   useEffect(() => {
@@ -99,6 +179,19 @@ export default function DiscoverScreen() {
 
   return (
     <View style={[s.screen, { paddingTop: insets.top }]}>
+      <FlatList
+        data={feed}
+        keyExtractor={(item, i) => `${item.kind}-${item.at}-${i}`}
+        refreshControl={
+          <RefreshControl
+            refreshing={feedRefreshing}
+            onRefresh={() => setFeedRefreshing(true)}
+            tintColor={colors.acc}
+          />
+        }
+        ListHeaderComponent={
+          <View>
+
       {/* Header */}
       <View style={s.header}>
         <Text style={s.logo}>DIVEMAP</Text>
@@ -169,6 +262,45 @@ export default function DiscoverScreen() {
           ))
         )}
       </ScrollView>
+
+            {/* ── Community feed header ── */}
+            <View style={s.feedTitleRow}>
+              <Text style={s.listHeaderText}>COMMUNITY</Text>
+              <View style={{ flexDirection: 'row', gap: 7 }}>
+                {([['all', 'All'], ['following', 'Following']] as const).map(([m, label]) => (
+                  <TouchableOpacity
+                    key={m}
+                    onPress={() => setFeedMode(m)}
+                    style={[s.feedModeChip, feedMode === m && s.feedModeChipActive]}
+                  >
+                    <Text style={[s.feedModeText, feedMode === m && s.feedModeTextActive]}>{label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </View>
+        }
+        renderItem={({ item }) => (
+          <FeedCard
+            item={item}
+            onPressUser={() => { if (item.user?.username) router.push(`/diver/${item.user.username}`) }}
+            onPressSite={() => { if (item.site) router.push(`/sites/${item.site.slug}`) }}
+          />
+        )}
+        ListEmptyComponent={
+          <View style={s.feedEmpty}>
+            <Text style={s.feedEmptyTitle}>
+              {feedMode === 'following' ? 'Nothing from divers you follow yet' : 'No community posts yet'}
+            </Text>
+            <Text style={s.feedEmptySub}>
+              {feedMode === 'following'
+                ? 'Find divers in the feed and follow them from their profiles.'
+                : 'Photos and insider notes from divers will show up here.'}
+            </Text>
+          </View>
+        }
+        contentContainerStyle={{ paddingBottom: 28 }}
+      />
     </View>
   )
 }
@@ -322,6 +454,44 @@ const s = StyleSheet.create({
     fontFamily: Platform.select({ ios: 'Courier New', android: 'monospace' }),
     textTransform: 'capitalize',
   },
+  feedTitleRow: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: 16, paddingTop: 18, paddingBottom: 8,
+  },
+  feedModeChip: {
+    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999,
+    borderWidth: 1, borderColor: colors.line,
+  },
+  feedModeChipActive: { backgroundColor: colors.chip, borderColor: colors.acc },
+  feedModeText: { fontSize: 11, fontWeight: '600', color: colors.tx3 },
+  feedModeTextActive: { color: colors.acc },
+  feedCard: {
+    marginHorizontal: 14, marginBottom: 12,
+    backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line,
+    borderRadius: 16, overflow: 'hidden',
+  },
+  feedHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 11 },
+  feedAvatarWrap: {
+    width: 34, height: 34, borderRadius: 17, overflow: 'hidden',
+    backgroundColor: colors.accDeep, alignItems: 'center', justifyContent: 'center',
+  },
+  feedAvatar: { width: '100%', height: '100%' },
+  feedAvatarLetter: { fontSize: 14, fontWeight: '700', color: '#caf0f8' },
+  feedWho: { fontSize: 12.5, fontWeight: '700', color: colors.tx },
+  feedSite: { fontSize: 10.5, fontWeight: '600', color: colors.acc },
+  feedTime: {
+    fontSize: 9, color: colors.tx3, flexShrink: 0,
+    fontFamily: Platform.select({ ios: 'Courier New', android: 'monospace' }),
+  },
+  feedPhoto: { width: '100%', height: 260, backgroundColor: colors.bg2 },
+  feedCaption: { padding: 11, fontSize: 12, color: colors.tx2, fontWeight: '500' },
+  feedNoteText: {
+    padding: 12, fontSize: 12.5, color: colors.tx, lineHeight: 19, fontWeight: '500',
+    backgroundColor: 'rgba(0,180,216,0.05)',
+  },
+  feedEmpty: { alignItems: 'center', padding: 36, gap: 6 },
+  feedEmptyTitle: { fontSize: 13.5, fontWeight: '700', color: colors.tx },
+  feedEmptySub: { fontSize: 11.5, color: colors.tx3, fontWeight: '500', textAlign: 'center' },
   emptyCard: {
     width: 200,
     height: 80,

@@ -42,7 +42,8 @@ export {
   submitInsiderNote,
   getActivityFeed,
 } from './social'
-export type { FollowCounts, InsiderNote, ActivityItem, ActivityKind } from './social'
+export type { FollowCounts, InsiderNote, ActivityItem, ActivityKind, HomeFeedItem } from './social'
+export { getHomeFeed } from './social'
 export { getUserPlans, insertPlan, deletePlan } from './plans'
 export type { DivePlanWithSite } from './plans'
 export { getUserByUsername, getUserPublicDives, getUserPhotos } from './profile'

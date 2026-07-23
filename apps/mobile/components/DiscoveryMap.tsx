@@ -172,8 +172,7 @@ export function DiscoveryMap({ sites }: Props) {
 const s = StyleSheet.create({
   wrap: {
     marginHorizontal: 14,
-    flex: 1,
-    minHeight: 220,
+    height: 300,
     marginBottom: 4,
     borderRadius: 16,
     overflow: 'hidden',

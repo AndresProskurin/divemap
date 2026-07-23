@@ -48,6 +48,8 @@ const OPERATORS: OperatorSeed[] = [
     rating: 4.8,
     tech_dives_guided: 1420,
     website: 'https://example.com/dahab-tech-divers',
+    email: 'bookings@dahabtechdivers.example.com',
+    phone: '+20 100 555 0101',
     sites: ['blue-hole-dahab'],
   },
   {
@@ -63,6 +65,8 @@ const OPERATORS: OperatorSeed[] = [
     rating: 4.7,
     tech_dives_guided: 980,
     website: 'https://example.com/red-sea-explorers',
+    email: 'dive@redseaexplorers.example.com',
+    phone: '+20 100 555 0102',
     sites: ['ss-thistlegorm', 'ras-mohammed'],
   },
   {
@@ -78,6 +82,8 @@ const OPERATORS: OperatorSeed[] = [
     rating: 4.6,
     tech_dives_guided: 0,
     website: 'https://example.com/tulamben-dive-lodge',
+    email: 'stay@tulambenlodge.example.com',
+    phone: '+62 812 555 0103',
     sites: ['usat-liberty-bali'],
   },
   {
@@ -93,6 +99,8 @@ const OPERATORS: OperatorSeed[] = [
     rating: 4.5,
     tech_dives_guided: 0,
     website: 'https://example.com/penida-blue-dive',
+    email: 'hello@penidablue.example.com',
+    phone: '+62 812 555 0104',
     sites: ['manta-point-bali'],
   },
   {
@@ -108,6 +116,8 @@ const OPERATORS: OperatorSeed[] = [
     rating: 4.6,
     tech_dives_guided: 0,
     website: 'https://example.com/cayman-deep-blue',
+    email: 'info@caymandeepblue.example.com',
+    phone: '+1 345 555 0105',
     sites: ['devils-grotto-cayman'],
   },
   {
@@ -123,6 +133,8 @@ const OPERATORS: OperatorSeed[] = [
     rating: 4.9,
     tech_dives_guided: 0,
     website: 'https://example.com/silfra-freeflow',
+    email: 'dive@silfrafreeflow.example.com',
+    phone: '+354 555 0106',
     sites: ['silfra-fissure'],
   },
   {
@@ -138,6 +150,8 @@ const OPERATORS: OperatorSeed[] = [
     rating: 4.8,
     tech_dives_guided: 310,
     website: 'https://example.com/palau-blue-water',
+    email: 'book@palaubluewater.example.com',
+    phone: '+680 555 0107',
     sites: ['blue-corner-palau', 'jellyfish-lake-palau'],
   },
   {
@@ -153,6 +167,8 @@ const OPERATORS: OperatorSeed[] = [
     rating: 4.7,
     tech_dives_guided: 640,
     website: 'https://example.com/gozo-technical-diving',
+    email: 'tech@gozotechnical.example.com',
+    phone: '+356 5550 0108',
     sites: ['the-arch-malta', 'blue-hole-malta'],
   },
   {
@@ -168,6 +184,8 @@ const OPERATORS: OperatorSeed[] = [
     rating: 4.4,
     tech_dives_guided: 0,
     website: 'https://example.com/cirkewwa-dive-centre',
+    email: 'info@cirkewwadive.example.com',
+    phone: '+356 5550 0109',
     sites: ['cirkewwa-malta'],
   },
   {
@@ -183,6 +201,8 @@ const OPERATORS: OperatorSeed[] = [
     rating: 4.6,
     tech_dives_guided: 520,
     website: 'https://example.com/coron-wreck-divers',
+    email: 'wrecks@coronwreckdivers.example.com',
+    phone: '+63 917 555 0110',
     sites: ['barracuda-lake-philippines'],
   },
   {
@@ -198,6 +218,8 @@ const OPERATORS: OperatorSeed[] = [
     rating: 4.9,
     tech_dives_guided: 0,
     website: 'https://example.com/sulu-sea-liveaboards',
+    email: 'trips@sululiveaboards.example.com',
+    phone: '+63 917 555 0111',
     sites: ['tubbataha-reef'],
   },
   {
@@ -213,6 +235,8 @@ const OPERATORS: OperatorSeed[] = [
     rating: 4.7,
     tech_dives_guided: 0,
     website: 'https://example.com/exmouth-ningaloo-dive',
+    email: 'whalesharks@ningaloodive.example.com',
+    phone: '+61 8 5550 0112',
     sites: ['ningaloo-reef'],
   },
   {
@@ -228,6 +252,8 @@ const OPERATORS: OperatorSeed[] = [
     rating: 4.8,
     tech_dives_guided: 275,
     website: 'https://example.com/northland-dive-nz',
+    email: 'dive@northlanddive.example.com',
+    phone: '+64 9 555 0113',
     sites: ['poor-knights-islands', 'poor-knights-wall'],
   },
   {
@@ -243,6 +269,8 @@ const OPERATORS: OperatorSeed[] = [
     rating: 4.7,
     tech_dives_guided: 0,
     website: 'https://example.com/similan-liveaboards',
+    email: 'book@similanliveaboards.example.com',
+    phone: '+66 76 555 0114',
     sites: ['richelieu-rock-thailand', 'koh-bon-thailand'],
   },
   {
@@ -258,6 +286,8 @@ const OPERATORS: OperatorSeed[] = [
     rating: 4.8,
     tech_dives_guided: 1130,
     website: 'https://example.com/larnaca-wreck-divers',
+    email: 'zenobia@larnacawreckdivers.example.com',
+    phone: '+357 24 555 0115',
     sites: ['zenobia-wreck-cyprus'],
   },
 ]

@@ -75,22 +75,37 @@ export function OperatorsTab({ operators }: Props) {
                   )}
                 </span>
               )}
-              {op.website && (
-                <a
-                  href={op.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-bold rounded-full px-[13px] py-[6px]"
-                  style={{
-                    fontSize: '11.5px',
-                    background: 'var(--acc)',
-                    color: '#02222e',
-                    textDecoration: 'none',
-                  }}
-                >
-                  Contact
-                </a>
-              )}
+              <span style={{ display: 'inline-flex', gap: '7px', flexWrap: 'wrap' }}>
+                {op.phone && (
+                  <a
+                    href={`tel:${op.phone.replace(/\s+/g, '')}`}
+                    className="font-semibold rounded-full px-[12px] py-[6px]"
+                    style={{ fontSize: '11px', border: '1px solid var(--line)', color: 'var(--tx2)', textDecoration: 'none' }}
+                  >
+                    📞 Call
+                  </a>
+                )}
+                {op.email && (
+                  <a
+                    href={`mailto:${op.email}`}
+                    className="font-semibold rounded-full px-[12px] py-[6px]"
+                    style={{ fontSize: '11px', border: '1px solid var(--line)', color: 'var(--tx2)', textDecoration: 'none' }}
+                  >
+                    ✉️ Email
+                  </a>
+                )}
+                {op.website && (
+                  <a
+                    href={op.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-bold rounded-full px-[13px] py-[6px]"
+                    style={{ fontSize: '11.5px', background: 'var(--acc)', color: '#02222e', textDecoration: 'none' }}
+                  >
+                    🌐 Website
+                  </a>
+                )}
+              </span>
             </div>
           </div>
         ))
