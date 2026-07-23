@@ -576,6 +576,11 @@ on Site URL, unauthenticated, which reads as "login did nothing".
 
 ## 15. Immediate Action Items
 
+0b. **Posts as a first-class entity** (carousels, reels/video): today a "post" is a
+   site_photos or insider_notes row rendered as one. Multi-photo carousels and video
+   need a real posts table (posts + post_media) — design it before the content volume
+   makes migration painful. Photo posts auto-link the uploader's latest dive at the
+   site (site_photos.dive_id) so post pages show real dive conditions.
 0a. **Mobile map: my-location** (requested 2026-07-22) — expo-location permission flow,
    blue dot + recenter button on the discovery map. Only meaningful on a real device;
    pair with the first physical-device test session.

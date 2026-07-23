@@ -106,6 +106,8 @@ export type ActivityKind = 'report' | 'dive' | 'photo'
 
 export interface ActivityItem {
   kind: ActivityKind
+  /** Present for photo items — opens the post. */
+  id?: string
   at: string
   site: { name: string; slug: string; country: string | null } | null
   user: { username: string | null; display_name: string | null } | null
@@ -149,7 +151,7 @@ export async function getActivityFeed(
 
   let photos = supabase
     .from('site_photos')
-    .select('created_at, url, user_id, site:site_id(name, slug, country), user:user_id(username, display_name)')
+    .select('id, created_at, url, user_id, site:site_id(name, slug, country), user:user_id(username, display_name)')
     .order('created_at', { ascending: false })
     .limit(limit)
   if (ids) photos = photos.in('user_id', ids)
@@ -179,6 +181,7 @@ export async function getActivityFeed(
     })),
     ...(p.data ?? []).map((row) => ({
       kind: 'photo' as const,
+      id: row.id,
       at: row.created_at,
       site: row.site as unknown as Joined | null,
       user: row.user as unknown as JoinedUser | null,
@@ -196,6 +199,8 @@ export async function getActivityFeed(
 
 export interface HomeFeedItem {
   kind: 'photo' | 'note'
+  /** Source row id (site_photos.id or insider_notes.id) — the post id. */
+  id: string
   at: string
   user: { username: string | null; display_name: string | null; avatar_url: string | null } | null
   site: { name: string; slug: string; country: string | null } | null
@@ -224,14 +229,14 @@ export async function getHomeFeed(
 
   let photos = supabase
     .from('site_photos')
-    .select('created_at, url, caption, user:user_id(username, display_name, avatar_url), site:site_id(name, slug, country)')
+    .select('id, created_at, url, caption, user:user_id(username, display_name, avatar_url), site:site_id(name, slug, country)')
     .order('created_at', { ascending: false })
     .limit(limit)
   if (ids) photos = photos.in('user_id', ids)
 
   let notes = supabase
     .from('insider_notes')
-    .select('created_at, body, status, user:user_id(username, display_name, avatar_url), site:site_id(name, slug, country)')
+    .select('id, created_at, body, status, user:user_id(username, display_name, avatar_url), site:site_id(name, slug, country)')
     .eq('status', 'approved')
     .order('created_at', { ascending: false })
     .limit(limit)
@@ -245,6 +250,7 @@ export async function getHomeFeed(
   const items: HomeFeedItem[] = [
     ...(p.data ?? []).map((row) => ({
       kind: 'photo' as const,
+      id: row.id,
       at: row.created_at,
       user: row.user as unknown as JUser | null,
       site: row.site as unknown as JSite | null,
@@ -253,6 +259,7 @@ export async function getHomeFeed(
     })),
     ...(n.data ?? []).map((row) => ({
       kind: 'note' as const,
+      id: row.id,
       at: row.created_at,
       user: row.user as unknown as JUser | null,
       site: row.site as unknown as JSite | null,
@@ -263,4 +270,77 @@ export async function getHomeFeed(
   return items
     .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
     .slice(0, limit)
+}
+
+// ─── Post detail ─────────────────────────────────────────────────────────────
+
+export interface PostUser {
+  username: string | null
+  display_name: string | null
+  avatar_url: string | null
+}
+export interface PostSite {
+  name: string
+  slug: string
+  country: string | null
+}
+export interface PostDive {
+  dived_at: string
+  max_depth_m: number
+  bottom_time_min: number
+  viz_m: number | null
+  current_level: string | null
+  temp_surface_c: number | null
+  temp_bottom_c: number | null
+  rating: number | null
+  gas_o2: number | null
+  gas_he: number | null
+}
+
+export interface PhotoPost {
+  kind: 'photo'
+  id: string
+  url: string
+  caption: string | null
+  depth_taken_m: number | null
+  created_at: string
+  user: PostUser | null
+  site: PostSite | null
+  /** The linked dive, when the uploader attached one (or auto-link found it). */
+  dive: PostDive | null
+}
+
+export interface NotePost {
+  kind: 'note'
+  id: string
+  body: string
+  status: 'pending' | 'approved' | 'rejected'
+  created_at: string
+  user: PostUser | null
+  site: PostSite | null
+}
+
+export async function getPhotoPost(id: string, supabase: Client): Promise<PhotoPost | null> {
+  const { data } = await supabase
+    .from('site_photos')
+    .select(`
+      id, url, caption, depth_taken_m, created_at,
+      user:user_id(username, display_name, avatar_url),
+      site:site_id(name, slug, country),
+      dive:dive_id(dived_at, max_depth_m, bottom_time_min, viz_m, current_level, temp_surface_c, temp_bottom_c, rating, gas_o2, gas_he)
+    `)
+    .eq('id', id)
+    .maybeSingle()
+  if (!data) return null
+  return { kind: 'photo', ...(data as object) } as unknown as PhotoPost
+}
+
+export async function getNotePost(id: string, supabase: Client): Promise<NotePost | null> {
+  const { data } = await supabase
+    .from('insider_notes')
+    .select('id, body, status, created_at, user:user_id(username, display_name, avatar_url), site:site_id(name, slug, country)')
+    .eq('id', id)
+    .maybeSingle()
+  if (!data) return null
+  return { kind: 'note', ...(data as object) } as unknown as NotePost
 }

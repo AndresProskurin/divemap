@@ -66,11 +66,23 @@ export async function uploadSitePhoto(
 
   const { data: { publicUrl } } = supabase.storage.from('site-photos').getPublicUrl(path)
 
+  // Auto-link the uploader's most recent dive at this site: the photo post
+  // then carries real dive conditions without any extra input.
+  const { data: lastDive } = await supabase
+    .from('dives')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('site_id', siteId)
+    .order('dived_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
   const { error: rowErr } = await supabase.from('site_photos').insert({
     site_id: siteId,
     user_id: user.id,
     url: publicUrl,
     caption: caption?.trim() || null,
+    dive_id: lastDive?.id ?? null,
   })
   if (rowErr) throw new Error(rowErr.message)
 

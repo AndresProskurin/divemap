@@ -29,10 +29,11 @@ function feedTimeAgo(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-function FeedCard({ item, onPressUser, onPressSite }: {
+function FeedCard({ item, onPressUser, onPressSite, onPressPost }: {
   item: HomeFeedItem
   onPressUser: () => void
   onPressSite: () => void
+  onPressPost: () => void
 }) {
   const who = item.user?.username ? `@${item.user.username}` : item.user?.display_name ?? 'diver'
   return (
@@ -59,16 +60,18 @@ function FeedCard({ item, onPressUser, onPressSite }: {
         <Text style={s.feedTime}>{feedTimeAgo(item.at)}</Text>
       </View>
 
-      {/* Body */}
+      {/* Body → the post itself */}
       {item.kind === 'photo' && item.photoUrl ? (
-        <TouchableOpacity activeOpacity={0.9} onPress={onPressSite}>
+        <TouchableOpacity activeOpacity={0.9} onPress={onPressPost}>
           <Image source={{ uri: item.photoUrl }} style={s.feedPhoto} />
         </TouchableOpacity>
       ) : null}
       {item.text ? (
-        <Text style={item.kind === 'note' ? s.feedNoteText : s.feedCaption}>
-          {item.kind === 'note' ? `◆ ${item.text}` : item.text}
-        </Text>
+        <TouchableOpacity activeOpacity={0.8} onPress={onPressPost}>
+          <Text style={item.kind === 'note' ? s.feedNoteText : s.feedCaption}>
+            {item.kind === 'note' ? `◆ ${item.text}` : item.text}
+          </Text>
+        </TouchableOpacity>
       ) : null}
     </View>
   )
@@ -285,6 +288,7 @@ export default function DiscoverScreen() {
             item={item}
             onPressUser={() => { if (item.user?.username) router.push(`/diver/${item.user.username}`) }}
             onPressSite={() => { if (item.site) router.push(`/sites/${item.site.slug}`) }}
+            onPressPost={() => router.push(`/post/${item.kind}/${item.id}`)}
           />
         )}
         ListEmptyComponent={

@@ -235,15 +235,22 @@ export default function DiverProfileScreen() {
           ))
         )}
 
-        {/* Photos */}
+        {/* Posts — square thumbnails, Instagram-style, tap → post */}
         {photos.length > 0 && (
           <>
-            <Text style={s.sectionTitle}>PHOTOS</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={s.photoStrip}>
+            <Text style={s.sectionTitle}>POSTS</Text>
+            <View style={s.postGrid}>
               {photos.map(ph => (
-                <Image key={ph.id} source={{ uri: ph.url }} style={s.photoThumb} />
+                <TouchableOpacity
+                  key={ph.id}
+                  style={s.postThumbWrap}
+                  activeOpacity={0.85}
+                  onPress={() => router.push(`/post/photo/${ph.id}`)}
+                >
+                  <Image source={{ uri: ph.url }} style={s.postThumb} />
+                </TouchableOpacity>
               ))}
-            </ScrollView>
+            </View>
           </>
         )}
       </ScrollView>
@@ -303,6 +310,7 @@ const s = StyleSheet.create({
   diveSite: { fontSize: 13, fontWeight: '700', color: colors.tx },
   diveMeta: { fontSize: 10.5, fontWeight: '600', color: colors.tx2, fontFamily: MONO },
   diveDate: { fontSize: 9.5, color: colors.tx3, fontFamily: MONO },
-  photoStrip: { flexDirection: 'row', gap: 8 },
-  photoThumb: { width: 96, height: 96, borderRadius: 12, backgroundColor: colors.card },
+  postGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
+  postThumbWrap: { width: '31.8%', aspectRatio: 1, borderRadius: 8, overflow: 'hidden' },
+  postThumb: { width: '100%', height: '100%', backgroundColor: colors.card },
 })
