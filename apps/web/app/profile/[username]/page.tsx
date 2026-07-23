@@ -4,7 +4,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { createServerClient } from '@supabase/ssr'
 import type { Database, Certification, GearItem } from '@divemap/db'
-import { getUserByUsername, getUserPublicDives, getUserPhotos, getFollowCounts } from '@divemap/db'
+import { getUserByUsername, getUserPublicDives, getUserPosts, getFollowCounts } from '@divemap/db'
 import { FollowButton } from './FollowButton'
 
 export const dynamic = 'force-dynamic'
@@ -83,7 +83,7 @@ export default async function PublicProfilePage({ params }: Props) {
   // is_public, photos are world-readable by policy.
   const [dives, photos, followCounts] = await Promise.all([
     getUserPublicDives(user.id, supabase, 20),
-    getUserPhotos(user.id, supabase, 24),
+    getUserPosts(user.id, supabase, 24),
     getFollowCounts(user.id, supabase),
   ])
 
@@ -248,27 +248,44 @@ export default async function PublicProfilePage({ params }: Props) {
         )}
       </div>
 
-      {/* ── Photos grid ── */}
+      {/* ── Posts grid ── */}
       {photos.length > 0 && (
         <div style={{ padding: '18px 16px 0', display: 'flex', flexDirection: 'column', gap: '9px' }}>
           <span className="font-mono font-semibold" style={{ fontSize: '9.5px', color: 'var(--tx3)', letterSpacing: '0.12em' }}>
-            PHOTOS
+            POSTS
           </span>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
-            {photos.map((ph) => {
+            {photos.map((post) => {
+              const first = post.media[0]
+              if (!first) return null
+              const thumb = first.media_type === 'video' ? first.thumbnail_url : first.url
+              const badge = first.media_type === 'video' ? '▶' : post.media.length > 1 ? '⧉' : null
               const img = (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={ph.url}
-                  alt={ph.caption ?? 'Dive photo'}
-                  loading="lazy"
-                  style={{ width: '100%', height: '108px', objectFit: 'cover', borderRadius: '12px', display: 'block' }}
-                />
+                <div style={{ position: 'relative' }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={thumb ?? ''}
+                    alt={post.body ?? 'Dive post'}
+                    loading="lazy"
+                    style={{ width: '100%', height: '108px', objectFit: 'cover', borderRadius: '12px', display: 'block' }}
+                  />
+                  {badge && (
+                    <span
+                      style={{
+                        position: 'absolute', top: '6px', right: '8px',
+                        fontSize: '10px', color: '#eaf6fd',
+                        background: 'rgba(4,18,31,0.8)', borderRadius: '6px', padding: '2px 6px',
+                      }}
+                    >
+                      {badge}
+                    </span>
+                  )}
+                </div>
               )
-              return ph.site ? (
-                <Link key={ph.id} href={`/sites/${ph.site.slug}`}>{img}</Link>
+              return post.site ? (
+                <Link key={post.id} href={`/sites/${post.site.slug}`}>{img}</Link>
               ) : (
-                <div key={ph.id}>{img}</div>
+                <div key={post.id}>{img}</div>
               )
             })}
           </div>

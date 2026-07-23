@@ -21,7 +21,7 @@ type FeedMode = 'reports' | 'activity' | 'following'
 const KIND_META: Record<ActivityItem['kind'], { icon: string; verb: string }> = {
   report: { icon: '💧', verb: 'reported conditions' },
   dive:   { icon: '🤿', verb: 'logged a dive' },
-  photo:  { icon: '📷', verb: 'added a photo' },
+  post:   { icon: '📷', verb: 'posted' },
 }
 
 type ReportRow = {
@@ -212,7 +212,7 @@ export default function ConditionsScreen() {
       .channel('activity-feed')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'conditions_reports' }, bump)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'dives' }, bump)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'site_photos' }, bump)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, bump)
       .subscribe()
     return () => {
       if (timer) clearTimeout(timer)
@@ -269,7 +269,10 @@ export default function ConditionsScreen() {
           renderItem={({ item }) => (
             <ActivityRow
               item={item}
-              onPress={() => { if (item.site) router.push(`/sites/${item.site.slug}`) }}
+              onPress={() => {
+                if (item.kind === 'post' && item.id) router.push(`/post/${item.id}`)
+                else if (item.site) router.push(`/sites/${item.site.slug}`)
+              }}
               onPressUser={() => { if (item.user?.username) router.push(`/diver/${item.user.username}`) }}
             />
           )}

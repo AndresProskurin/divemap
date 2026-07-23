@@ -1,10 +1,8 @@
 /**
- * Post detail: a photo post (image + caption + the linked dive's conditions)
- * or a note post (insider-note body). Feed cards and profile grids land here;
- * the site line links onward to the site page, the author to their profile.
- *
- * Carousels and video are deferred — they need a real posts entity instead of
- * single-photo site_photos rows (backlog).
+ * Post detail: a media post (photo/video carousel + caption + the linked
+ * dive's conditions) or a note post (moderated community tip). Feed cards and
+ * profile grids land here; the site line links onward to the site page, the
+ * author to their profile.
  */
 
 import { useEffect, useState } from 'react'
@@ -19,12 +17,16 @@ import {
   ActivityIndicator,
   TextInput,
   KeyboardAvoidingView,
+  useWindowDimensions,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { getPhotoPost, getNotePost, getPostComments, addPostComment, deletePostComment } from '@divemap/db'
-import type { PhotoPost, NotePost, PostDive, PostComment } from '@divemap/db'
-import { createClient } from '../../../lib/supabase'
+import { useVideoPlayer, VideoView } from 'expo-video'
+import { getPost, getPostComments, addPostComment, deletePostComment } from '@divemap/db'
+import type { PostDetail, PostDive, PostComment, PostMediaItem } from '@divemap/db'
+import { createClient } from '../../lib/supabase'
 import { colors } from '@divemap/ui'
 
 const MONO = Platform.select({ ios: 'Courier New', android: 'monospace' })
@@ -72,39 +74,96 @@ function DiveConditions({ dive }: { dive: PostDive }) {
         <Text style={s.diveRating}>{'★'.repeat(dive.rating)}{'☆'.repeat(5 - dive.rating)}</Text>
       )}
     </View>
+  )}
+
+/** One video slide — hooks force a component per player instance. */
+function VideoSlide({ item, size, active }: { item: PostMediaItem; size: number; active: boolean }) {
+  const player = useVideoPlayer(item.url, (p) => { p.loop = true })
+  useEffect(() => {
+    if (active) player.play()
+    else player.pause()
+  }, [active, player])
+  return (
+    <VideoView
+      player={player}
+      style={{ width: size, height: size, backgroundColor: colors.bg2 }}
+      contentFit="cover"
+      nativeControls
+    />
+  )
+}
+
+/** Instagram-style pager: full-width square slides, dots when more than one. */
+function MediaPager({ media }: { media: PostMediaItem[] }) {
+  const { width } = useWindowDimensions()
+  const [page, setPage] = useState(0)
+
+  function onScrollEnd(e: NativeSyntheticEvent<NativeScrollEvent>) {
+    setPage(Math.round(e.nativeEvent.contentOffset.x / width))
+  }
+
+  return (
+    <View>
+      <ScrollView
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={onScrollEnd}
+        style={{ flexGrow: 0 }}
+      >
+        {media.map((m, i) => (
+          m.media_type === 'video' ? (
+            <VideoSlide key={m.id} item={m} size={width} active={i === page} />
+          ) : (
+            <Image
+              key={m.id}
+              source={{ uri: m.url }}
+              style={{ width, height: width, backgroundColor: colors.bg2 }}
+              resizeMode="cover"
+            />
+          )
+        ))}
+      </ScrollView>
+      {media.length > 1 && (
+        <View style={s.dots}>
+          {media.map((m, i) => (
+            <View key={m.id} style={[s.dot, i === page && s.dotActive]} />
+          ))}
+        </View>
+      )}
+    </View>
   )
 }
 
 export default function PostScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
-  const { kind, id } = useLocalSearchParams<{ kind: string; id: string }>()
+  const { id } = useLocalSearchParams<{ id: string }>()
 
   const [loading, setLoading] = useState(true)
-  const [post, setPost] = useState<PhotoPost | NotePost | null>(null)
+  const [post, setPost] = useState<PostDetail | null>(null)
   const [comments, setComments] = useState<PostComment[]>([])
   const [viewerId, setViewerId] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
   const [sending, setSending] = useState(false)
 
   useEffect(() => {
-    if (!id || !kind) return
+    if (!id) return
     const supabase = createClient()
-    const fetcher = kind === 'photo' ? getPhotoPost : getNotePost
-    fetcher(id, supabase).then((p) => { setPost(p); setLoading(false) })
-    getPostComments(kind as 'photo' | 'note', id, supabase).then(setComments).catch(() => {})
+    getPost(id, supabase).then((p) => { setPost(p); setLoading(false) })
+    getPostComments(id, supabase).then(setComments).catch(() => {})
     supabase.auth.getUser().then(({ data }) => setViewerId(data.user?.id ?? null))
-  }, [kind, id])
+  }, [id])
 
   async function sendComment() {
     const body = draft.trim()
     if (!body || !viewerId || !id || sending) return
     setSending(true)
     const supabase = createClient()
-    const { error } = await addPostComment(kind as 'photo' | 'note', id, viewerId, body, supabase)
+    const { error } = await addPostComment(id, viewerId, body, supabase)
     if (!error) {
       setDraft('')
-      setComments(await getPostComments(kind as 'photo' | 'note', id, supabase))
+      setComments(await getPostComments(id, supabase))
     }
     setSending(false)
   }
@@ -129,6 +188,7 @@ export default function PostScreen() {
   }
 
   const who = post.user?.username ? `@${post.user.username}` : post.user?.display_name ?? 'diver'
+  const firstDepth = post.media.find((m) => m.depth_m != null)?.depth_m
 
   return (
     <View style={[s.screen, { paddingTop: insets.top }]}>
@@ -165,15 +225,15 @@ export default function PostScreen() {
         </TouchableOpacity>
 
         {/* Body */}
-        {post.kind === 'photo' ? (
+        {post.kind === 'media' ? (
           <>
-            <Image source={{ uri: post.url }} style={s.photo} resizeMode="cover" />
-            {post.caption && <Text style={s.caption}>{post.caption}</Text>}
+            <MediaPager media={post.media} />
+            {post.body && <Text style={s.caption}>{post.body}</Text>}
             {post.dive ? (
               <DiveConditions dive={post.dive} />
             ) : (
-              post.depth_taken_m != null && (
-                <Text style={s.depthTaken}>Taken at {post.depth_taken_m}m</Text>
+              firstDepth != null && (
+                <Text style={s.depthTaken}>Taken at {firstDepth}m</Text>
               )
             )}
           </>
@@ -283,7 +343,12 @@ const s = StyleSheet.create({
   who: { fontSize: 14, fontWeight: '700', color: colors.tx },
   siteLine: { fontSize: 11.5, fontWeight: '600', color: colors.acc },
   time: { fontSize: 9.5, color: colors.tx3, fontFamily: MONO },
-  photo: { width: '100%', aspectRatio: 1, backgroundColor: colors.bg2 },
+  dots: {
+    flexDirection: 'row', gap: 5, justifyContent: 'center',
+    paddingTop: 10,
+  },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.line },
+  dotActive: { backgroundColor: colors.acc },
   caption: { padding: 14, fontSize: 13.5, color: colors.tx, lineHeight: 20, fontWeight: '500' },
   depthTaken: { paddingHorizontal: 14, fontSize: 11, color: colors.tx3, fontFamily: MONO },
   diveCard: {

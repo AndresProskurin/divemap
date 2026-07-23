@@ -1,14 +1,14 @@
 export {
   getSiteBySlug,
   getSiteConditions,
-  getSitePhotos,
+  getSiteMediaPosts,
   getSiteOperators,
   getSiteMarineLife,
   getTopSiteSlugs,
   searchSites,
   browseSites,
 } from './sites'
-export type { OperatorWithSite, MarineSpecies, SiteSearchResult, SiteListItem, BrowseSitesOptions, BrowseSitesResult } from './sites'
+export type { OperatorWithSite, MarineSpecies, SiteMediaPost, SiteSearchResult, SiteListItem, BrowseSitesOptions, BrowseSitesResult } from './sites'
 
 export { insertConditionsReport } from './conditions'
 export type { InsertConditionsReportInput } from './conditions'
@@ -38,15 +38,19 @@ export {
   isFollowing,
   getFollowCounts,
   getFollowingIds,
-  getSiteInsiderNotes,
-  submitInsiderNote,
+  getSiteNotes,
+  createNotePost,
+  createMediaPost,
+  addPostMedia,
+  deletePost,
   getActivityFeed,
+  postThumbnail,
 } from './social'
-export type { FollowCounts, InsiderNote, ActivityItem, ActivityKind, HomeFeedItem } from './social'
-export { getHomeFeed, getPhotoPost, getNotePost, getPostComments, addPostComment, deletePostComment } from './social'
+export type { FollowCounts, SiteNote, ActivityItem, ActivityKind, HomeFeedItem } from './social'
+export { getHomeFeed, getPost, getPostComments, addPostComment, deletePostComment } from './social'
 export type { PostComment } from './social'
-export type { PhotoPost, NotePost, PostDive } from './social'
+export type { PostDetail, PostDive, PostMediaItem, PostUser, PostSite } from './social'
 export { getUserPlans, insertPlan, deletePlan } from './plans'
 export type { DivePlanWithSite } from './plans'
-export { getUserByUsername, getUserPublicDives, getUserPhotos } from './profile'
-export type { UserPhoto } from './profile'
+export { getUserByUsername, getUserPublicDives, getUserPosts } from './profile'
+export type { UserPost } from './profile'

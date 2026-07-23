@@ -1,16 +1,39 @@
 'use client'
 
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { createClient } from '@divemap/db'
-import type { SitePhoto } from '@divemap/db'
+import { createClient, createMediaPost, addPostMedia } from '@divemap/db'
+import type { SiteMediaPost } from '@divemap/db'
 
 interface Props {
   siteId: string
-  initialPhotos: SitePhoto[]
+  initialPosts: SiteMediaPost[]
+}
+
+/** One gallery cell — a single attachment of some post. */
+interface GalleryItem {
+  key: string
+  /** What the grid shows: the photo, or the video's poster. */
+  thumbUrl: string
+  videoUrl: string | null
+  caption: string | null
+  depth_m: number | null
+}
+
+function flatten(posts: SiteMediaPost[]): GalleryItem[] {
+  return posts.flatMap((p) =>
+    p.media.map((m) => ({
+      key: m.id,
+      thumbUrl: m.media_type === 'video' ? m.thumbnail_url ?? '' : m.url,
+      videoUrl: m.media_type === 'video' ? m.url : null,
+      caption: p.body,
+      depth_m: m.depth_m,
+    })),
+  )
 }
 
 interface Lightbox {
   url: string
+  videoUrl: string | null
   caption: string | null
 }
 
@@ -52,7 +75,7 @@ interface UploadModalProps {
   file: File
   siteId: string
   onClose: () => void
-  onUploaded: (photo: SitePhoto) => void
+  onUploaded: (post: SiteMediaPost) => void
 }
 
 function UploadModal({ file, siteId, onClose, onUploaded }: UploadModalProps) {
@@ -98,19 +121,27 @@ function UploadModal({ file, siteId, onClose, onUploaded }: UploadModalProps) {
         .getPublicUrl(path)
 
       const depthVal = parseFloat(depth)
-      const { data: newPhoto, error: dbErr } = await supabase
-        .from('site_photos')
-        .insert({
-          site_id: siteId,
-          user_id: user.id,
-          url: publicUrl,
-          caption: caption.trim() || null,
-          depth_taken_m: isNaN(depthVal) ? null : depthVal,
-        })
-        .select()
-        .single()
-      if (dbErr) throw new Error(dbErr.message)
-      if (newPhoto) onUploaded(newPhoto as SitePhoto)
+      const { id: postId, error: postErr } = await createMediaPost(
+        { siteId, userId: user.id, body: caption },
+        supabase,
+      )
+      if (postErr || !postId) throw new Error(postErr ?? 'Could not create the post.')
+      const media = {
+        post_id: postId,
+        position: 0,
+        media_type: 'photo' as const,
+        url: publicUrl,
+        depth_m: isNaN(depthVal) ? null : depthVal,
+      }
+      const { error: mediaErr } = await addPostMedia([media], supabase)
+      if (mediaErr) throw new Error(mediaErr)
+      onUploaded({
+        id: postId,
+        user_id: user.id,
+        body: caption.trim() || null,
+        created_at: new Date().toISOString(),
+        media: [{ id: `${postId}-0`, position: 0, media_type: 'photo', url: publicUrl, thumbnail_url: null, depth_m: media.depth_m }],
+      })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed.')
     } finally {
@@ -228,14 +259,15 @@ function UploadModal({ file, siteId, onClose, onUploaded }: UploadModalProps) {
   )
 }
 
-export function PhotosTab({ siteId, initialPhotos }: Props) {
-  const [photos, setPhotos] = useState<SitePhoto[]>(initialPhotos)
+export function PhotosTab({ siteId, initialPosts }: Props) {
+  const [posts, setPosts] = useState<SiteMediaPost[]>(initialPosts)
   const [lightbox, setLightbox] = useState<Lightbox | null>(null)
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  const photos = flatten(posts)
 
-  const handleUploaded = useCallback((photo: SitePhoto) => {
-    setPhotos(prev => [photo, ...prev])
+  const handleUploaded = useCallback((post: SiteMediaPost) => {
+    setPosts(prev => [post, ...prev])
     setPendingFile(null)
   }, [])
 
@@ -279,10 +311,10 @@ export function PhotosTab({ siteId, initialPhotos }: Props) {
               gap: '8px',
             }}
           >
-            {photos.map((photo, i) => (
+            {photos.map((item, i) => (
               <button
-                key={photo.id}
-                onClick={() => setLightbox({ url: photo.url, caption: photo.caption })}
+                key={item.key}
+                onClick={() => setLightbox({ url: item.thumbUrl, videoUrl: item.videoUrl, caption: item.caption })}
                 className="overflow-hidden rounded-12 relative"
                 style={{
                   height: i % 5 === 0 ? '180px' : '132px',
@@ -295,11 +327,19 @@ export function PhotosTab({ siteId, initialPhotos }: Props) {
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={photo.url}
-                  alt={photo.caption ?? `Site photo ${i + 1}`}
+                  src={item.thumbUrl}
+                  alt={item.caption ?? `Site photo ${i + 1}`}
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
-                {photo.depth_taken_m != null && (
+                {item.videoUrl && (
+                  <span
+                    className="absolute top-[6px] right-[8px] rounded-full px-[8px] py-[3px]"
+                    style={{ fontSize: '10px', background: 'rgba(4,18,31,0.8)', color: '#eaf6fd' }}
+                  >
+                    ▶
+                  </span>
+                )}
+                {item.depth_m != null && (
                   <span
                     className="absolute bottom-[6px] left-[8px] font-mono font-semibold rounded-full px-[7px] py-[3px]"
                     style={{
@@ -308,7 +348,7 @@ export function PhotosTab({ siteId, initialPhotos }: Props) {
                       color: 'var(--acc)',
                     }}
                   >
-                    {photo.depth_taken_m}m
+                    {item.depth_m}m
                   </span>
                 )}
               </button>
@@ -336,17 +376,33 @@ export function PhotosTab({ siteId, initialPhotos }: Props) {
             className="relative max-w-4xl w-full mx-4"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={lightbox.url}
-              alt={lightbox.caption ?? 'Site photo'}
-              style={{
-                width: '100%',
-                maxHeight: '80vh',
-                objectFit: 'contain',
-                borderRadius: '12px',
-              }}
-            />
+            {lightbox.videoUrl ? (
+              // eslint-disable-next-line jsx-a11y/media-has-caption
+              <video
+                src={lightbox.videoUrl}
+                poster={lightbox.url}
+                controls
+                autoPlay
+                style={{
+                  width: '100%',
+                  maxHeight: '80vh',
+                  borderRadius: '12px',
+                  background: '#000',
+                }}
+              />
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={lightbox.url}
+                alt={lightbox.caption ?? 'Site photo'}
+                style={{
+                  width: '100%',
+                  maxHeight: '80vh',
+                  objectFit: 'contain',
+                  borderRadius: '12px',
+                }}
+              />
+            )}
             {lightbox.caption && (
               <p
                 className="mt-3 text-center"

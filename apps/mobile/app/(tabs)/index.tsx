@@ -14,8 +14,9 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Link } from 'expo-router'
+import { useWindowDimensions } from 'react-native'
 import { createClient } from '../../lib/supabase'
-import type { SiteListItem, MapSite, HomeFeedItem } from '@divemap/db'
+import type { SiteListItem, MapSite, HomeFeedItem, PostMediaItem } from '@divemap/db'
 import { browseSites, getMapSites, getHomeFeed, getFollowingIds } from '@divemap/db'
 import { DiscoveryMap } from '../../components/DiscoveryMap'
 import { useRouter } from 'expo-router'
@@ -27,6 +28,52 @@ function feedTimeAgo(iso: string): string {
   const d = Math.floor(h / 24)
   if (d < 7) return `${d}d ago`
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
+/**
+ * In-card carousel: paged slides the width of the card. Videos render their
+ * poster with a ▶ badge — playback lives on the post page, the feed stays
+ * light. Any tap opens the post.
+ */
+function FeedMediaCarousel({ media, onPressPost }: {
+  media: PostMediaItem[]
+  onPressPost: () => void
+}) {
+  const { width } = useWindowDimensions()
+  const cardW = width - 28 // feedCard marginHorizontal 14 × 2
+  const [page, setPage] = useState(0)
+  return (
+    <View>
+      <ScrollView
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        style={{ flexGrow: 0 }}
+        onMomentumScrollEnd={(e) => setPage(Math.round(e.nativeEvent.contentOffset.x / cardW))}
+      >
+        {media.map((m) => (
+          <TouchableOpacity key={m.id} activeOpacity={0.9} onPress={onPressPost}>
+            <Image
+              source={{ uri: m.media_type === 'video' ? m.thumbnail_url ?? undefined : m.url }}
+              style={[s.feedPhoto, { width: cardW }]}
+            />
+            {m.media_type === 'video' && (
+              <View style={s.playBadge}>
+                <Text style={s.playBadgeText}>▶</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+      {media.length > 1 && (
+        <View style={s.feedDots}>
+          {media.map((m, i) => (
+            <View key={m.id} style={[s.feedDot, i === page && s.feedDotActive]} />
+          ))}
+        </View>
+      )}
+    </View>
+  )
 }
 
 function FeedCard({ item, onPressUser, onPressSite, onPressPost }: {
@@ -61,11 +108,9 @@ function FeedCard({ item, onPressUser, onPressSite, onPressPost }: {
       </View>
 
       {/* Body → the post itself */}
-      {item.kind === 'photo' && item.photoUrl ? (
-        <TouchableOpacity activeOpacity={0.9} onPress={onPressPost}>
-          <Image source={{ uri: item.photoUrl }} style={s.feedPhoto} />
-        </TouchableOpacity>
-      ) : null}
+      {item.kind === 'media' && item.media.length > 0 && (
+        <FeedMediaCarousel media={item.media} onPressPost={onPressPost} />
+      )}
       {item.text ? (
         <TouchableOpacity activeOpacity={0.8} onPress={onPressPost}>
           <Text style={item.kind === 'note' ? s.feedNoteText : s.feedCaption}>
@@ -184,7 +229,7 @@ export default function DiscoverScreen() {
     <View style={[s.screen, { paddingTop: insets.top }]}>
       <FlatList
         data={feed}
-        keyExtractor={(item, i) => `${item.kind}-${item.at}-${i}`}
+        keyExtractor={(item) => item.id}
         refreshControl={
           <RefreshControl
             refreshing={feedRefreshing}
@@ -288,7 +333,7 @@ export default function DiscoverScreen() {
             item={item}
             onPressUser={() => { if (item.user?.username) router.push(`/diver/${item.user.username}`) }}
             onPressSite={() => { if (item.site) router.push(`/sites/${item.site.slug}`) }}
-            onPressPost={() => router.push(`/post/${item.kind}/${item.id}`)}
+            onPressPost={() => router.push(`/post/${item.id}`)}
           />
         )}
         ListEmptyComponent={
@@ -488,6 +533,17 @@ const s = StyleSheet.create({
     fontFamily: Platform.select({ ios: 'Courier New', android: 'monospace' }),
   },
   feedPhoto: { width: '100%', height: 260, backgroundColor: colors.bg2 },
+  playBadge: {
+    position: 'absolute', top: 10, right: 10,
+    width: 26, height: 26, borderRadius: 13,
+    backgroundColor: 'rgba(4,18,31,0.72)', alignItems: 'center', justifyContent: 'center',
+  },
+  playBadgeText: { fontSize: 11, color: '#eaf6fd', marginLeft: 2 },
+  feedDots: {
+    flexDirection: 'row', gap: 5, justifyContent: 'center', paddingVertical: 8,
+  },
+  feedDot: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: colors.line },
+  feedDotActive: { backgroundColor: colors.acc },
   feedCaption: { padding: 11, fontSize: 12, color: colors.tx2, fontWeight: '500' },
   feedNoteText: {
     padding: 12, fontSize: 12.5, color: colors.tx, lineHeight: 19, fontWeight: '500',

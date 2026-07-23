@@ -14,13 +14,13 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter, Link } from 'expo-router'
-import { getSiteBySlug, getSiteConditions, getSiteOperators, getSitePhotos, getWishlistItem, addToWishlist, removeFromWishlist } from '@divemap/db'
-import type { SitePhoto } from '@divemap/db'
+import { getSiteBySlug, getSiteConditions, getSiteOperators, getSiteMediaPosts, getWishlistItem, addToWishlist, removeFromWishlist } from '@divemap/db'
+import type { SiteMediaPost } from '@divemap/db'
 import type { Tables } from '@divemap/db'
 import { createClient } from '../../../lib/supabase'
-import { pickPhoto, uploadSitePhoto } from '../../../lib/photos'
-import { getSiteInsiderNotes, submitInsiderNote, getHomeFeed } from '@divemap/db'
-import type { InsiderNote, HomeFeedItem } from '@divemap/db'
+import { pickMedia, createPost, type PickedMedia } from '../../../lib/posts'
+import { getSiteNotes, createNotePost, getHomeFeed } from '@divemap/db'
+import type { SiteNote, HomeFeedItem } from '@divemap/db'
 import type { DiveSite, ConditionsReport } from '@divemap/db'
 import { colors } from '@divemap/ui'
 
@@ -48,13 +48,13 @@ export default function SiteDetailScreen() {
   const [site, setSite] = useState<DiveSite | null>(null)
   const [conditions, setConditions] = useState<ConditionsReport[]>([])
   const [operators, setOperators] = useState<Tables<'operators'>[]>([])
-  const [photos, setPhotos] = useState<SitePhoto[]>([])
+  const [myPosts, setMyPosts] = useState<SiteMediaPost[]>([])
   const [uploading, setUploading] = useState(false)
   const [siteFeed, setSiteFeed] = useState<HomeFeedItem[]>([])
   const [viewerId, setViewerId] = useState<string | null>(null)
-  const [pendingPhoto, setPendingPhoto] = useState<import('../../../lib/photos').PickedPhoto | null>(null)
+  const [pendingMedia, setPendingMedia] = useState<PickedMedia[]>([])
   const [photoCaption, setPhotoCaption] = useState('')
-  const [ugcNotes, setUgcNotes] = useState<InsiderNote[]>([])
+  const [ugcNotes, setUgcNotes] = useState<SiteNote[]>([])
   const [noteDraft, setNoteDraft] = useState('')
   const [noteOpen, setNoteOpen] = useState(false)
   const [noteBusy, setNoteBusy] = useState(false)
@@ -76,8 +76,8 @@ export default function SiteDetailScreen() {
       setLoading(false)
       if (s) {
         getSiteOperators(s.id, supabase).then(setOperators).catch(() => {})
-        getSitePhotos(s.id, supabase).then(setPhotos).catch(() => {})
-        getSiteInsiderNotes(s.id, supabase).then(setUgcNotes).catch(() => {})
+        getSiteMediaPosts(s.id, supabase).then(setMyPosts).catch(() => {})
+        getSiteNotes(s.id, supabase).then(setUgcNotes).catch(() => {})
         getHomeFeed(supabase, { siteId: s.id, limit: 20 }).then(setSiteFeed).catch(() => {})
         supabase.auth.getUser().then(({ data }) => setViewerId(data.user?.id ?? null))
         const { data: { user } } = await supabase.auth.getUser()
@@ -263,11 +263,11 @@ export default function SiteDetailScreen() {
                       if (!user) { Alert.alert('Sign in required', 'Sign in to share notes.'); return }
                       if (!site) return
                       setNoteBusy(true)
-                      const { error } = await submitInsiderNote(site.id, user.id, body, supabase)
+                      const { error } = await createNotePost(site.id, user.id, body, supabase)
                       setNoteBusy(false)
                       if (error) { Alert.alert('Error', error); return }
                       setNoteDraft(''); setNoteOpen(false)
-                      setUgcNotes(await getSiteInsiderNotes(site.id, supabase))
+                      setUgcNotes(await getSiteNotes(site.id, supabase))
                     }}
                     style={s.ugcSubmitBtn}
                   >
@@ -282,16 +282,18 @@ export default function SiteDetailScreen() {
           </View>
         )}
 
-        {/* Photos */}
+        {/* My posts at this site */}
         <View style={s.section}>
-          <Text style={s.sectionTitle}>PHOTOS{photos.length > 0 ? ` · ${photos.length}` : ''}</Text>
+          <Text style={s.sectionTitle}>
+            MY POSTS{myPosts.filter(p => p.user_id === viewerId).length > 0 ? ` · ${myPosts.filter(p => p.user_id === viewerId).length}` : ''}
+          </Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={s.photoStrip}>
             <TouchableOpacity
               disabled={uploading}
               onPress={async () => {
                 if (!site) return
-                const picked = await pickPhoto()
-                if (picked) { setPendingPhoto(picked); setPhotoCaption('') }
+                const picked = await pickMedia()
+                if (picked.length > 0) { setPendingMedia(picked); setPhotoCaption('') }
               }}
               style={s.photoAdd}
             >
@@ -299,58 +301,69 @@ export default function SiteDetailScreen() {
                 ? <ActivityIndicator size="small" color={colors.acc} />
                 : <Text style={s.photoAddText}>＋</Text>}
             </TouchableOpacity>
-            {photos.filter(ph => ph.user_id === viewerId).map(ph => (
-              <TouchableOpacity key={ph.id} onPress={() => router.push(`/post/photo/${ph.id}`)}>
-                <Image source={{ uri: ph.url }} style={s.photoThumb} />
-              </TouchableOpacity>
-            ))}
+            {myPosts.filter(p => p.user_id === viewerId).map(p => {
+              const first = p.media[0]
+              const thumb = first?.media_type === 'video' ? first.thumbnail_url : first?.url
+              return (
+                <TouchableOpacity key={p.id} onPress={() => router.push(`/post/${p.id}`)}>
+                  <Image source={{ uri: thumb ?? undefined }} style={s.photoThumb} />
+                  {first?.media_type === 'video' && <Text style={s.thumbBadge}>▶</Text>}
+                  {p.media.length > 1 && <Text style={s.thumbBadge}>⧉ {p.media.length}</Text>}
+                </TouchableOpacity>
+              )
+            })}
           </ScrollView>
         </View>
 
-        {/* Caption sheet for a staged photo */}
-        {pendingPhoto && (
+        {/* Caption sheet for staged media */}
+        {pendingMedia.length > 0 && (
           <View style={s.section}>
-            <Text style={s.sectionTitle}>NEW POST</Text>
-            <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
-              <Image source={{ uri: pendingPhoto.uri }} style={s.pendingThumb} />
-              <View style={{ flex: 1, gap: 8 }}>
-                <TextInput
-                  style={s.captionInput}
-                  value={photoCaption}
-                  onChangeText={setPhotoCaption}
-                  placeholder="Write a caption… viz, what you saw, tips"
-                  placeholderTextColor={colors.tx3}
-                  multiline
-                  maxLength={500}
-                />
-                <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
-                  <TouchableOpacity
-                    disabled={uploading}
-                    style={s.ugcSubmitBtn}
-                    onPress={async () => {
-                      if (!site || !pendingPhoto) return
-                      setUploading(true)
-                      try {
-                        await uploadSitePhoto(pendingPhoto, site.id, photoCaption)
-                        const supabase = createClient()
-                        setPhotos(await getSitePhotos(site.id, supabase))
-                        setSiteFeed(await getHomeFeed(supabase, { siteId: site.id, limit: 20 }))
-                        setPendingPhoto(null)
-                        setPhotoCaption('')
-                      } catch (e) {
-                        Alert.alert('Upload failed', e instanceof Error ? e.message : 'Try again.')
-                      } finally {
-                        setUploading(false)
-                      }
-                    }}
-                  >
-                    <Text style={s.ugcSubmitText}>{uploading ? 'Posting…' : 'Post'}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => setPendingPhoto(null)}>
-                    <Text style={{ fontSize: 12, color: colors.tx3 }}>Cancel</Text>
-                  </TouchableOpacity>
+            <Text style={s.sectionTitle}>
+              NEW POST{pendingMedia.length > 1 ? ` · ${pendingMedia.length} ITEMS` : ''}
+            </Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={s.photoStrip}>
+              {pendingMedia.map((m, i) => (
+                <View key={`${m.uri}-${i}`}>
+                  <Image source={{ uri: m.uri }} style={s.pendingThumb} />
+                  {m.type === 'video' && <Text style={s.thumbBadge}>▶</Text>}
                 </View>
-              </View>
+              ))}
+            </ScrollView>
+            <TextInput
+              style={s.captionInput}
+              value={photoCaption}
+              onChangeText={setPhotoCaption}
+              placeholder="Write a caption… viz, what you saw, tips"
+              placeholderTextColor={colors.tx3}
+              multiline
+              maxLength={500}
+            />
+            <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+              <TouchableOpacity
+                disabled={uploading}
+                style={s.ugcSubmitBtn}
+                onPress={async () => {
+                  if (!site || pendingMedia.length === 0) return
+                  setUploading(true)
+                  try {
+                    await createPost(pendingMedia, site.id, photoCaption)
+                    const supabase = createClient()
+                    setMyPosts(await getSiteMediaPosts(site.id, supabase))
+                    setSiteFeed(await getHomeFeed(supabase, { siteId: site.id, limit: 20 }))
+                    setPendingMedia([])
+                    setPhotoCaption('')
+                  } catch (e) {
+                    Alert.alert('Upload failed', e instanceof Error ? e.message : 'Try again.')
+                  } finally {
+                    setUploading(false)
+                  }
+                }}
+              >
+                <Text style={s.ugcSubmitText}>{uploading ? 'Posting…' : 'Post'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setPendingMedia([])}>
+                <Text style={{ fontSize: 12, color: colors.tx3 }}>Cancel</Text>
+              </TouchableOpacity>
             </View>
           </View>
         )}
@@ -363,13 +376,23 @@ export default function SiteDetailScreen() {
               const who = item.user?.username ? `@${item.user.username}` : item.user?.display_name ?? 'diver'
               return (
                 <TouchableOpacity
-                  key={`${item.kind}-${item.id}`}
+                  key={item.id}
                   style={s.sitePostRow}
                   activeOpacity={0.8}
-                  onPress={() => router.push(`/post/${item.kind}/${item.id}`)}
+                  onPress={() => router.push(`/post/${item.id}`)}
                 >
-                  {item.kind === 'photo' && item.photoUrl ? (
-                    <Image source={{ uri: item.photoUrl }} style={s.sitePostThumb} />
+                  {item.kind === 'media' && item.media[0] ? (
+                    <View>
+                      <Image
+                        source={{ uri: item.media[0].media_type === 'video' ? item.media[0].thumbnail_url ?? undefined : item.media[0].url }}
+                        style={s.sitePostThumb}
+                      />
+                      {(item.media[0].media_type === 'video' || item.media.length > 1) && (
+                        <Text style={s.thumbBadge}>
+                          {item.media[0].media_type === 'video' ? '▶' : `⧉ ${item.media.length}`}
+                        </Text>
+                      )}
+                    </View>
                   ) : (
                     <View style={[s.sitePostThumb, s.sitePostNoteThumb]}>
                       <Text style={{ fontSize: 15, color: colors.acc }}>◆</Text>
@@ -378,7 +401,7 @@ export default function SiteDetailScreen() {
                   <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
                     <Text style={s.sitePostWho} numberOfLines={1}>{who}</Text>
                     <Text style={s.sitePostText} numberOfLines={2}>
-                      {item.text ?? (item.kind === 'photo' ? 'Photo' : '')}
+                      {item.text ?? (item.kind === 'media' ? 'Photo' : '')}
                     </Text>
                   </View>
                   <Text style={s.sitePostChevron}>›</Text>
@@ -493,6 +516,12 @@ const s = StyleSheet.create({
   photoAddText: { fontSize: 22, color: colors.acc },
   photoThumb: { width: 96, height: 96, borderRadius: 12, backgroundColor: colors.card },
   pendingThumb: { width: 84, height: 84, borderRadius: 12, backgroundColor: colors.card },
+  thumbBadge: {
+    position: 'absolute', top: 6, right: 6,
+    fontSize: 9, fontWeight: '700', color: '#eaf6fd',
+    backgroundColor: 'rgba(4,18,31,0.72)', borderRadius: 6, overflow: 'hidden',
+    paddingHorizontal: 5, paddingVertical: 2,
+  },
   captionInput: {
     backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, borderRadius: 12,
     padding: 11, fontSize: 13, color: colors.tx, minHeight: 64, textAlignVertical: 'top',

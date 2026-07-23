@@ -572,15 +572,27 @@ Authentication → URL Configuration → Redirect URLs. For local dev that needs
 `http://localhost:3000/**`. A missing entry does not error — it silently lands the user
 on Site URL, unauthenticated, which reads as "login did nothing".
 
+### Video posts ride the site-photos bucket
+
+The posts migration widened the `site-photos` bucket to
+`image/jpeg + video/mp4 + video/quicktime`, 50 MB cap. There is no client-side
+transcode in Expo — the library file goes up as-is, and the poster frame
+(expo-video-thumbnails) uploads next to it as `…-thumb.jpg`. Grids and feed
+cards must always render the poster, never the mp4. `expo-video` is a native
+module: after pulling this change, rebuild the dev client
+(`npx expo run:ios --no-bundler`) or the app crashes on the post screen.
+
 ---
 
 ## 15. Immediate Action Items
 
-0b. **Posts as a first-class entity** (carousels, reels/video): today a "post" is a
-   site_photos or insider_notes row rendered as one. Multi-photo carousels and video
-   need a real posts table (posts + post_media) — design it before the content volume
-   makes migration painful. Photo posts auto-link the uploader's latest dive at the
-   site (site_photos.dive_id) so post pages show real dive conditions.
+0b. ~~Posts as a first-class entity~~ **DONE 2026-07-23** — `posts` + `post_media`
+   replaced site_photos/insider_notes (migration `20260728000000_posts.sql`, ids
+   preserved, comments rewired to post_id). Mobile: multi-select picker (≤10 items),
+   photo carousels with dots, video upload with poster frame (expo-video +
+   expo-video-thumbnails, dev-client rebuild required), post page `/post/[id]`.
+   Media posts auto-link the poster's latest dive at the site. Remaining polish:
+   web upload is still single-photo; no reels-style vertical viewer.
 0a. **Mobile map: my-location** (requested 2026-07-22) — expo-location permission flow,
    blue dot + recenter button on the discovery map. Only meaningful on a real device;
    pair with the first physical-device test session.

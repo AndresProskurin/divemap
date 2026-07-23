@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import type { DiveSite, ConditionsReport, SitePhoto, Operator } from '@divemap/db'
+import type { DiveSite, ConditionsReport, SiteMediaPost, Operator } from '@divemap/db'
 import type { MarineSpecies } from '@divemap/db'
 import { OverviewTab } from './tabs/OverviewTab'
 import { ConditionsTab } from './tabs/ConditionsTab'
@@ -34,7 +34,7 @@ function VizDots({ score }: { score: number }) {
 interface Props {
   site: DiveSite
   conditions: ConditionsReport[]
-  photos: SitePhoto[]
+  photos: SiteMediaPost[]
   operators: Operator[]
   marineLife: MarineSpecies[]
 }
@@ -239,7 +239,7 @@ export function SiteDetailPage({ site, conditions, photos, operators, marineLife
           <ConditionsTab siteSlug={site.slug} reports={conditions} />
         )}
         {activeTab === 'Photos' && (
-          <PhotosTab siteId={site.id} initialPhotos={photos} />
+          <PhotosTab siteId={site.id} initialPosts={photos} />
         )}
         {activeTab === 'Operators' && (
           <OperatorsTab operators={operators} />

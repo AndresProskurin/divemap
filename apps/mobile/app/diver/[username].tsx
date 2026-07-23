@@ -20,13 +20,13 @@ import { useLocalSearchParams, useRouter, Link } from 'expo-router'
 import {
   getUserByUsername,
   getUserPublicDives,
-  getUserPhotos,
+  getUserPosts,
   getFollowCounts,
   isFollowing,
   followUser,
   unfollowUser,
 } from '@divemap/db'
-import type { Certification, GearItem, DiveWithSite, UserPhoto } from '@divemap/db'
+import type { Certification, GearItem, DiveWithSite, UserPost } from '@divemap/db'
 import { createClient } from '../../lib/supabase'
 import { colors } from '@divemap/ui'
 
@@ -51,7 +51,7 @@ export default function DiverProfileScreen() {
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<PublicUser | null>(null)
   const [dives, setDives] = useState<DiveWithSite[]>([])
-  const [photos, setPhotos] = useState<UserPhoto[]>([])
+  const [posts, setPosts] = useState<UserPost[]>([])
   const [followers, setFollowers] = useState(0)
   const [viewerId, setViewerId] = useState<string | null>(null)
   const [following, setFollowing] = useState<boolean | null>(null)
@@ -65,12 +65,12 @@ export default function DiverProfileScreen() {
     setProfile(user)
     const [d, p, counts, { data: { user: viewer } }] = await Promise.all([
       getUserPublicDives(user.id, supabase, 20),
-      getUserPhotos(user.id, supabase, 12),
+      getUserPosts(user.id, supabase, 12),
       getFollowCounts(user.id, supabase),
       supabase.auth.getUser(),
     ])
     setDives(d)
-    setPhotos(p)
+    setPosts(p)
     setFollowers(counts.followers)
     setViewerId(viewer?.id ?? null)
     if (viewer && viewer.id !== user.id) {
@@ -236,20 +236,29 @@ export default function DiverProfileScreen() {
         )}
 
         {/* Posts — square thumbnails, Instagram-style, tap → post */}
-        {photos.length > 0 && (
+        {posts.length > 0 && (
           <>
             <Text style={s.sectionTitle}>POSTS</Text>
             <View style={s.postGrid}>
-              {photos.map(ph => (
-                <TouchableOpacity
-                  key={ph.id}
-                  style={s.postThumbWrap}
-                  activeOpacity={0.85}
-                  onPress={() => router.push(`/post/photo/${ph.id}`)}
-                >
-                  <Image source={{ uri: ph.url }} style={s.postThumb} />
-                </TouchableOpacity>
-              ))}
+              {posts.map(p => {
+                const first = p.media[0]
+                const thumb = first?.media_type === 'video' ? first.thumbnail_url : first?.url
+                return (
+                  <TouchableOpacity
+                    key={p.id}
+                    style={s.postThumbWrap}
+                    activeOpacity={0.85}
+                    onPress={() => router.push(`/post/${p.id}`)}
+                  >
+                    <Image source={{ uri: thumb ?? undefined }} style={s.postThumb} />
+                    {(first?.media_type === 'video' || p.media.length > 1) && (
+                      <Text style={s.postThumbBadge}>
+                        {first?.media_type === 'video' ? '▶' : '⧉'}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                )
+              })}
             </View>
           </>
         )}
@@ -313,4 +322,10 @@ const s = StyleSheet.create({
   postGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
   postThumbWrap: { width: '31.8%', aspectRatio: 1, borderRadius: 8, overflow: 'hidden' },
   postThumb: { width: '100%', height: '100%', backgroundColor: colors.card },
+  postThumbBadge: {
+    position: 'absolute', top: 5, right: 5,
+    fontSize: 9, fontWeight: '700', color: '#eaf6fd',
+    backgroundColor: 'rgba(4,18,31,0.72)', borderRadius: 5, overflow: 'hidden',
+    paddingHorizontal: 4, paddingVertical: 2,
+  },
 })

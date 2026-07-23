@@ -30,10 +30,11 @@
       "expo-secure-store",
       "expo-web-browser",
       "@rnmapbox/maps",
+      "expo-video",
       [
         "expo-image-picker",
         {
-          "photosPermission": "DiveMap uses your photo library so you can attach dive-site photos to reports."
+          "photosPermission": "DiveMap uses your photo library so you can attach dive photos and videos to posts."
         }
       ]
     ]

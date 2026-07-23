@@ -8,14 +8,14 @@
  */
 
 import { useCallback, useEffect, useState } from 'react'
-import type { InsiderNote, Certification } from '@divemap/db'
-import { createClient, getSiteInsiderNotes, submitInsiderNote, useAuth } from '@divemap/db'
+import type { SiteNote, Certification } from '@divemap/db'
+import { createClient, getSiteNotes, createNotePost, useAuth } from '@divemap/db'
 
 interface Props {
   siteId: string
 }
 
-function noteAuthor(note: InsiderNote): string {
+function noteAuthor(note: SiteNote): string {
   const name = note.user?.username ? `@${note.user.username}` : note.user?.display_name ?? 'diver'
   const certs = (note.user?.certifications as Certification[] | null) ?? []
   const topCert = certs[0]?.abbr
@@ -24,14 +24,14 @@ function noteAuthor(note: InsiderNote): string {
 
 export function InsiderNotesSection({ siteId }: Props) {
   const { user } = useAuth()
-  const [notes, setNotes] = useState<InsiderNote[]>([])
+  const [notes, setNotes] = useState<SiteNote[]>([])
   const [draft, setDraft] = useState('')
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const reload = useCallback(() => {
-    getSiteInsiderNotes(siteId, createClient()).then(setNotes).catch(() => {})
+    getSiteNotes(siteId, createClient()).then(setNotes).catch(() => {})
   }, [siteId])
 
   useEffect(reload, [reload])
@@ -42,7 +42,7 @@ export function InsiderNotesSection({ siteId }: Props) {
     if (body.length < 20) { setError('At least 20 characters — make it useful.'); return }
     setBusy(true)
     setError(null)
-    const { error: err } = await submitInsiderNote(siteId, user.id, body, createClient())
+    const { error: err } = await createNotePost(siteId, user.id, body, createClient())
     setBusy(false)
     if (err) { setError(err); return }
     setDraft('')

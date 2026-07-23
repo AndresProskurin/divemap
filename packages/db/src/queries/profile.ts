@@ -110,25 +110,34 @@ export async function getUserPublicDives(
   return (data ?? []) as unknown as DiveWithSite[]
 }
 
-export interface UserPhoto {
+export interface UserPost {
   id: string
-  url: string
-  caption: string | null
-  depth_taken_m: number | null
+  body: string | null
   created_at: string
   site: { name: string; slug: string } | null
+  media: {
+    id: string
+    position: number
+    media_type: 'photo' | 'video'
+    url: string
+    thumbnail_url: string | null
+  }[]
 }
 
-export async function getUserPhotos(
+/** Media posts for the profile grid (notes carry no thumbnail — excluded). */
+export async function getUserPosts(
   userId: string,
   supabase: Client,
   limit = 24,
-): Promise<UserPhoto[]> {
+): Promise<UserPost[]> {
   const { data } = await supabase
-    .from('site_photos')
-    .select('id, url, caption, depth_taken_m, created_at, site:site_id(name, slug)')
+    .from('posts')
+    .select('id, body, created_at, site:site_id(name, slug), media:post_media(id, position, media_type, url, thumbnail_url)')
     .eq('user_id', userId)
+    .eq('kind', 'media')
     .order('created_at', { ascending: false })
     .limit(limit)
-  return (data ?? []) as unknown as UserPhoto[]
+  const posts = (data ?? []) as unknown as UserPost[]
+  for (const p of posts) p.media = (p.media ?? []).sort((a, b) => a.position - b.position)
+  return posts
 }

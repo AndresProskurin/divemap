@@ -485,63 +485,110 @@ export type Database = {
           },
         ]
       }
-      site_photos: {
+      posts: {
         Row: {
           id: string
-          site_id: string
           user_id: string
+          site_id: string
           dive_id: string | null
-          url: string
-          caption: string | null
-          depth_taken_m: number | null
-          species_tagged: string[]
+          kind: 'media' | 'note'
+          body: string | null
+          status: Database['public']['Enums']['note_status']
           created_at: string
           updated_at: string
         }
         Insert: {
           id?: string
-          site_id: string
           user_id: string
+          site_id: string
           dive_id?: string | null
-          url: string
-          caption?: string | null
-          depth_taken_m?: number | null
-          species_tagged?: string[]
+          kind: 'media' | 'note'
+          body?: string | null
+          status?: Database['public']['Enums']['note_status']
           created_at?: string
           updated_at?: string
         }
         Update: {
           id?: string
-          site_id?: string
           user_id?: string
+          site_id?: string
           dive_id?: string | null
-          url?: string
-          caption?: string | null
-          depth_taken_m?: number | null
-          species_tagged?: string[]
+          kind?: 'media' | 'note'
+          body?: string | null
+          status?: Database['public']['Enums']['note_status']
           created_at?: string
           updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: 'site_photos_site_id_fkey'
-            columns: ['site_id']
-            isOneToOne: false
-            referencedRelation: 'dive_sites'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'site_photos_user_id_fkey'
+            foreignKeyName: 'posts_user_id_fkey'
             columns: ['user_id']
             isOneToOne: false
             referencedRelation: 'users'
             referencedColumns: ['id']
           },
           {
-            foreignKeyName: 'site_photos_dive_id_fkey'
+            foreignKeyName: 'posts_site_id_fkey'
+            columns: ['site_id']
+            isOneToOne: false
+            referencedRelation: 'dive_sites'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'posts_dive_id_fkey'
             columns: ['dive_id']
             isOneToOne: false
             referencedRelation: 'dives'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      post_media: {
+        Row: {
+          id: string
+          post_id: string
+          position: number
+          media_type: 'photo' | 'video'
+          url: string
+          thumbnail_url: string | null
+          width: number | null
+          height: number | null
+          duration_s: number | null
+          depth_m: number | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          post_id: string
+          position?: number
+          media_type: 'photo' | 'video'
+          url: string
+          thumbnail_url?: string | null
+          width?: number | null
+          height?: number | null
+          duration_s?: number | null
+          depth_m?: number | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          post_id?: string
+          position?: number
+          media_type?: 'photo' | 'video'
+          url?: string
+          thumbnail_url?: string | null
+          width?: number | null
+          height?: number | null
+          duration_s?: number | null
+          depth_m?: number | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'post_media_post_id_fkey'
+            columns: ['post_id']
+            isOneToOne: false
+            referencedRelation: 'posts'
             referencedColumns: ['id']
           },
         ]
@@ -716,73 +763,25 @@ export type Database = {
           },
         ]
       }
-      insider_notes: {
-        Row: {
-          id: string
-          site_id: string
-          user_id: string
-          body: string
-          status: 'pending' | 'approved' | 'rejected'
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          site_id: string
-          user_id: string
-          body: string
-          status?: 'pending' | 'approved' | 'rejected'
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          site_id?: string
-          user_id?: string
-          body?: string
-          status?: 'pending' | 'approved' | 'rejected'
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: 'insider_notes_site_id_fkey'
-            columns: ['site_id']
-            isOneToOne: false
-            referencedRelation: 'dive_sites'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'insider_notes_user_id_fkey'
-            columns: ['user_id']
-            isOneToOne: false
-            referencedRelation: 'users'
-            referencedColumns: ['id']
-          },
-        ]
-      }
       post_comments: {
         Row: {
           id: string
           user_id: string
-          photo_id: string | null
-          note_id: string | null
+          post_id: string
           body: string
           created_at: string
         }
         Insert: {
           id?: string
           user_id: string
-          photo_id?: string | null
-          note_id?: string | null
+          post_id: string
           body: string
           created_at?: string
         }
         Update: {
           id?: string
           user_id?: string
-          photo_id?: string | null
-          note_id?: string | null
+          post_id?: string
           body?: string
           created_at?: string
         }
@@ -795,17 +794,10 @@ export type Database = {
             referencedColumns: ['id']
           },
           {
-            foreignKeyName: 'post_comments_photo_id_fkey'
-            columns: ['photo_id']
+            foreignKeyName: 'post_comments_post_id_fkey'
+            columns: ['post_id']
             isOneToOne: false
-            referencedRelation: 'site_photos'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'post_comments_note_id_fkey'
-            columns: ['note_id']
-            isOneToOne: false
-            referencedRelation: 'insider_notes'
+            referencedRelation: 'posts'
             referencedColumns: ['id']
           },
         ]

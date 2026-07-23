@@ -14,14 +14,14 @@ export type { AuthState } from './hooks/useAuth'
 export {
   getSiteBySlug,
   getSiteConditions,
-  getSitePhotos,
+  getSiteMediaPosts,
   getSiteOperators,
   getSiteMarineLife,
   getTopSiteSlugs,
   searchSites,
   browseSites,
 } from './queries/sites'
-export type { MarineSpecies, SiteSearchResult, SiteListItem, BrowseSitesOptions } from './queries/sites'
+export type { MarineSpecies, SiteMediaPost, SiteSearchResult, SiteListItem, BrowseSitesOptions } from './queries/sites'
 
 export { getMapSites } from './queries/sites'
 export type { MapSite } from './queries/sites'
@@ -35,23 +35,27 @@ export {
   updateUserProfile,
   getUserByUsername,
   getUserPublicDives,
-  getUserPhotos,
+  getUserPosts,
 } from './queries/profile'
-export type { UserPhoto } from './queries/profile'
+export type { UserPost } from './queries/profile'
 export {
   followUser,
   unfollowUser,
   isFollowing,
   getFollowCounts,
   getFollowingIds,
-  getSiteInsiderNotes,
-  submitInsiderNote,
+  getSiteNotes,
+  createNotePost,
+  createMediaPost,
+  addPostMedia,
+  deletePost,
   getActivityFeed,
+  postThumbnail,
 } from './queries/social'
-export type { FollowCounts, InsiderNote, ActivityItem, ActivityKind, HomeFeedItem } from './queries/social'
-export { getHomeFeed, getPhotoPost, getNotePost, getPostComments, addPostComment, deletePostComment } from './queries/social'
+export type { FollowCounts, SiteNote, ActivityItem, ActivityKind, HomeFeedItem } from './queries/social'
+export { getHomeFeed, getPost, getPostComments, addPostComment, deletePostComment } from './queries/social'
 export type { PostComment } from './queries/social'
-export type { PhotoPost, NotePost, PostDive } from './queries/social'
+export type { PostDetail, PostDive, PostMediaItem, PostUser, PostSite } from './queries/social'
 export { getUserPlans, insertPlan, deletePlan } from './queries/plans'
 export type { DivePlanWithSite } from './queries/plans'
 export type { DiveWithSite, WishlistSite, UpdateProfileInput } from './queries/profile'
@@ -84,7 +88,8 @@ export type DiveSite = Tables<'dive_sites'>
 export type Dive = Tables<'dives'>
 export type Operator = Tables<'operators'>
 export type ConditionsReport = Tables<'conditions_reports'>
-export type SitePhoto = Tables<'site_photos'>
+export type Post = Tables<'posts'>
+export type PostMedia = Tables<'post_media'>
 export type Species = Tables<'species'>
 export type SpeciesSighting = Tables<'species_sightings'>
 export type Wishlist = Tables<'wishlists'>

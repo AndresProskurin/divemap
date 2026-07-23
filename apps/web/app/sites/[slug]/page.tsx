@@ -6,7 +6,7 @@ import type { Database } from '@divemap/db'
 import {
   getSiteBySlug,
   getSiteConditions,
-  getSitePhotos,
+  getSiteMediaPosts,
   getSiteOperators,
   getSiteMarineLife,
   getTopSiteSlugs,
@@ -95,7 +95,7 @@ export default async function SitePage({ params }: Props) {
 
   const [conditions, photos, operators, marineLife] = await Promise.all([
     getSiteConditions(site.id, supabase),
-    getSitePhotos(site.id, supabase),
+    getSiteMediaPosts(site.id, supabase),
     getSiteOperators(site.id, supabase),
     getSiteMarineLife(site.id, supabase),
   ])

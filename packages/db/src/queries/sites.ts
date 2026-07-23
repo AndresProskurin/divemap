@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database, DiveSite, ConditionsReport, SitePhoto, Operator, Enums } from '../index'
+import type { Database, DiveSite, ConditionsReport, Operator, Enums } from '../index'
 
 type Client = SupabaseClient<Database>
 
@@ -25,14 +25,33 @@ export async function getSiteConditions(
   return (data ?? []) as ConditionsReport[]
 }
 
-export async function getSitePhotos(siteId: string, supabase: Client): Promise<SitePhoto[]> {
+export interface SiteMediaPost {
+  id: string
+  user_id: string
+  body: string | null
+  created_at: string
+  media: {
+    id: string
+    position: number
+    media_type: 'photo' | 'video'
+    url: string
+    thumbnail_url: string | null
+    depth_m: number | null
+  }[]
+}
+
+/** Media posts at a site — the Photos tab gallery and "my photos" filters. */
+export async function getSiteMediaPosts(siteId: string, supabase: Client): Promise<SiteMediaPost[]> {
   const { data } = await supabase
-    .from('site_photos')
-    .select('*')
+    .from('posts')
+    .select('id, user_id, body, created_at, media:post_media(id, position, media_type, url, thumbnail_url, depth_m)')
     .eq('site_id', siteId)
+    .eq('kind', 'media')
     .order('created_at', { ascending: false })
     .limit(50)
-  return (data ?? []) as SitePhoto[]
+  const posts = (data ?? []) as unknown as SiteMediaPost[]
+  for (const p of posts) p.media = (p.media ?? []).sort((a, b) => a.position - b.position)
+  return posts
 }
 
 export interface OperatorWithSite extends Operator {

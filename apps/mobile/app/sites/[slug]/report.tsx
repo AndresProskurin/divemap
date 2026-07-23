@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { insertConditionsReport } from '@divemap/db'
 import { createClient } from '../../../lib/supabase'
-import { pickPhoto, uploadSitePhoto, type PickedPhoto } from '../../../lib/photos'
+import { pickMedia, createPost, type PickedMedia } from '../../../lib/posts'
 import { Image } from 'react-native'
 import { colors } from '@divemap/ui'
 
@@ -56,7 +56,7 @@ export default function ReportScreen() {
   const [tempSurface, setTempSurface] = useState('')
   const [tempBottom, setTempBottom] = useState('')
   const [notes, setNotes] = useState('')
-  const [photo, setPhoto] = useState<PickedPhoto | null>(null)
+  const [photo, setPhoto] = useState<PickedMedia | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
   const currentLevels = ['none', 'mild', 'moderate', 'strong', 'ripping'] as const
@@ -86,7 +86,7 @@ export default function ReportScreen() {
       // failure surfaces instead of silently dropping the shot.
       if (photo) {
         try {
-          await uploadSitePhoto(photo, siteRes.data.id, notes.trim() || undefined)
+          await createPost([photo], siteRes.data.id, notes.trim() || undefined)
         } catch (e) {
           Alert.alert('Photo upload failed', e instanceof Error ? e.message : 'Try again.')
           setSubmitting(false)
@@ -249,7 +249,7 @@ export default function ReportScreen() {
             />
             <View style={s.photoRow}>
               <TouchableOpacity
-                onPress={async () => { const p = await pickPhoto(); if (p) setPhoto(p) }}
+                onPress={async () => { const p = await pickMedia(); if (p[0]) setPhoto(p[0]) }}
                 style={s.photoSlot}
               >
                 {photo ? (
