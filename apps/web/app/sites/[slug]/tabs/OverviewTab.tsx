@@ -1,6 +1,7 @@
 'use client'
 
 import type { DiveSite } from '@divemap/db'
+import { InsiderNotesSection } from '../InsiderNotesSection'
 import type { MarineSpecies } from '@divemap/db'
 import { ReviewsSection } from '../ReviewsSection'
 
@@ -58,6 +59,9 @@ export function OverviewTab({ site, marineLife }: Props) {
           </p>
         </div>
       )}
+
+      {/* Community insider notes (UGC, moderated) */}
+      <InsiderNotesSection siteId={site.id} />
 
       {marineLife.length > 0 && (
         <div className="flex flex-col gap-2">

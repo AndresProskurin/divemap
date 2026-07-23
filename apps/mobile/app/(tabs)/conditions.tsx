@@ -12,7 +12,17 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { createClient } from '../../lib/supabase'
+import { getActivityFeed, getFollowingIds } from '@divemap/db'
+import type { ActivityItem } from '@divemap/db'
 import { colors } from '@divemap/ui'
+
+type FeedMode = 'reports' | 'activity' | 'following'
+
+const KIND_META: Record<ActivityItem['kind'], { icon: string; verb: string }> = {
+  report: { icon: '💧', verb: 'reported conditions' },
+  dive:   { icon: '🤿', verb: 'logged a dive' },
+  photo:  { icon: '📷', verb: 'added a photo' },
+}
 
 type ReportRow = {
   id: string
@@ -110,10 +120,37 @@ function ReportCard({ item, onPress }: { item: ReportRow; onPress: () => void })
   )
 }
 
+function ActivityRow({ item, onPress }: { item: ActivityItem; onPress: () => void }) {
+  const meta = KIND_META[item.kind]
+  const who = item.user?.username ? `@${item.user.username}` : item.user?.display_name ?? 'A diver'
+  return (
+    <TouchableOpacity onPress={onPress} activeOpacity={0.75}>
+      <View style={s.card}>
+        <View style={s.cardHeader}>
+          <View style={s.cardHeaderLeft}>
+            <Text style={s.activityLine} numberOfLines={1}>
+              <Text style={{ color: colors.tx }}>{who}</Text>
+              <Text style={{ color: colors.tx3 }}> {meta.verb}</Text>
+            </Text>
+            <Text style={s.siteName} numberOfLines={1}>
+              {meta.icon} {item.site?.name ?? 'Unknown site'}
+              {item.site?.country ? `  ·  ${item.site.country}` : ''}
+            </Text>
+          </View>
+          <Text style={s.timeAgo}>{timeAgo(item.at)}</Text>
+        </View>
+        <Text style={s.activitySummary}>{item.summary}</Text>
+      </View>
+    </TouchableOpacity>
+  )
+}
+
 export default function ConditionsScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
   const [reports, setReports] = useState<ReportRow[]>([])
+  const [feed, setFeed] = useState<ActivityItem[]>([])
+  const [mode, setMode] = useState<FeedMode>('reports')
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
 
@@ -133,12 +170,35 @@ export default function ConditionsScreen() {
     }
   }
 
-  useEffect(() => { void fetchReports() }, [])
+  const fetchFeed = useCallback(async (m: FeedMode) => {
+    try {
+      const supabase = createClient()
+      let actorIds: string[] | undefined
+      if (m === 'following') {
+        const { data: { user } } = await supabase.auth.getUser()
+        actorIds = user ? await getFollowingIds(user.id, supabase) : []
+      }
+      setFeed(await getActivityFeed(supabase, { actorIds }))
+    } catch { /* ignore */ }
+    finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    setLoading(true)
+    if (mode === 'reports') void fetchReports()
+    else void fetchFeed(mode)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode])
 
   const onRefresh = useCallback(() => {
     setRefreshing(true)
-    void fetchReports()
-  }, [])
+    if (mode === 'reports') void fetchReports()
+    else void fetchFeed(mode)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, fetchFeed])
 
   return (
     <View style={[s.screen, { paddingTop: insets.top }]}>
@@ -149,14 +209,54 @@ export default function ConditionsScreen() {
           <Text style={s.subtitle}>Live reports from divers</Text>
         </View>
         <View style={s.badge}>
-          <Text style={s.badgeText}>{reports.length} REPORTS</Text>
+          <Text style={s.badgeText}>
+            {mode === 'reports' ? `${reports.length} REPORTS` : `${feed.length} EVENTS`}
+          </Text>
         </View>
+      </View>
+
+      {/* Mode chips */}
+      <View style={s.modeRow}>
+        {([['reports', 'Reports'], ['activity', 'All activity'], ['following', 'Following']] as const).map(([m, label]) => (
+          <TouchableOpacity
+            key={m}
+            onPress={() => setMode(m)}
+            style={[s.modeChip, mode === m && s.modeChipActive]}
+          >
+            <Text style={[s.modeChipText, mode === m && s.modeChipTextActive]}>{label}</Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
       {loading ? (
         <View style={s.loader}>
           <ActivityIndicator color={colors.acc} />
         </View>
+      ) : mode !== 'reports' ? (
+        <FlatList
+          data={feed}
+          keyExtractor={(item, i) => `${item.kind}-${item.at}-${i}`}
+          contentContainerStyle={s.list}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.acc} />}
+          renderItem={({ item }) => (
+            <ActivityRow
+              item={item}
+              onPress={() => { if (item.site) router.push(`/sites/${item.site.slug}`) }}
+            />
+          )}
+          ListEmptyComponent={
+            <View style={s.empty}>
+              <Text style={s.emptyTitle}>
+                {mode === 'following' ? 'Nothing from divers you follow' : 'No activity yet'}
+              </Text>
+              <Text style={s.emptySub}>
+                {mode === 'following'
+                  ? 'Follow divers from their public profiles on the web app.'
+                  : 'Reports, dives and photos will show up here.'}
+              </Text>
+            </View>
+          }
+        />
       ) : (
         <FlatList
           data={reports}
@@ -198,6 +298,19 @@ const s = StyleSheet.create({
   badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: colors.line },
   badgeText: { fontSize: 8.5, fontWeight: '600', color: colors.tx3, fontFamily: MONO, letterSpacing: 0.6 },
   loader: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  modeRow: {
+    flexDirection: 'row', gap: 8,
+    paddingHorizontal: 14, paddingVertical: 10,
+  },
+  modeChip: {
+    paddingHorizontal: 13, paddingVertical: 7, borderRadius: 999,
+    borderWidth: 1, borderColor: colors.line,
+  },
+  modeChipActive: { backgroundColor: colors.chip, borderColor: colors.acc },
+  modeChipText: { fontSize: 11.5, fontWeight: '600', color: colors.tx3 },
+  modeChipTextActive: { color: colors.acc },
+  activityLine: { fontSize: 12.5, fontWeight: '600' },
+  activitySummary: { fontSize: 12, fontWeight: '600', color: colors.tx2, fontFamily: MONO },
   list: { padding: 12, gap: 10, paddingBottom: 32 },
   card: {
     backgroundColor: colors.card, borderRadius: 16, borderWidth: 1, borderColor: colors.line,

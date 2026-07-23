@@ -4,6 +4,7 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
+  TextInput,
   StyleSheet,
   Platform,
   ActivityIndicator,
@@ -17,6 +18,8 @@ import type { SitePhoto } from '@divemap/db'
 import type { Tables } from '@divemap/db'
 import { createClient } from '../../../lib/supabase'
 import { pickPhoto, uploadSitePhoto } from '../../../lib/photos'
+import { getSiteInsiderNotes, submitInsiderNote } from '@divemap/db'
+import type { InsiderNote } from '@divemap/db'
 import type { DiveSite, ConditionsReport } from '@divemap/db'
 import { colors } from '@divemap/ui'
 
@@ -46,6 +49,10 @@ export default function SiteDetailScreen() {
   const [operators, setOperators] = useState<Tables<'operators'>[]>([])
   const [photos, setPhotos] = useState<SitePhoto[]>([])
   const [uploading, setUploading] = useState(false)
+  const [ugcNotes, setUgcNotes] = useState<InsiderNote[]>([])
+  const [noteDraft, setNoteDraft] = useState('')
+  const [noteOpen, setNoteOpen] = useState(false)
+  const [noteBusy, setNoteBusy] = useState(false)
   const [loading, setLoading] = useState(true)
   const [wishlisted, setWishlisted] = useState(false)
   const [wishlistId, setWishlistId] = useState<string | null>(null)
@@ -65,6 +72,7 @@ export default function SiteDetailScreen() {
       if (s) {
         getSiteOperators(s.id, supabase).then(setOperators).catch(() => {})
         getSitePhotos(s.id, supabase).then(setPhotos).catch(() => {})
+        getSiteInsiderNotes(s.id, supabase).then(setUgcNotes).catch(() => {})
         const { data: { user } } = await supabase.auth.getUser()
         if (user) {
           const item = await getWishlistItem(user.id, s.id, supabase)
@@ -207,6 +215,66 @@ export default function SiteDetailScreen() {
           </View>
         )}
 
+        {/* Community insider notes (UGC, moderated) */}
+        {(ugcNotes.length > 0 || true) && (
+          <View style={s.section}>
+            <Text style={[s.sectionTitle, { color: colors.warn }]}>COMMUNITY NOTES</Text>
+            {ugcNotes.map(n => (
+              <View key={n.id} style={[s.ugcNote, n.status !== 'approved' && { opacity: 0.65 }]}>
+                {n.status !== 'approved' && (
+                  <Text style={s.ugcPending}>PENDING REVIEW</Text>
+                )}
+                <Text style={s.ugcBody}>{n.body}</Text>
+                <Text style={s.ugcAuthor}>
+                  — {n.user?.username ? `@${n.user.username}` : n.user?.display_name ?? 'diver'}
+                </Text>
+              </View>
+            ))}
+            {!noteOpen ? (
+              <TouchableOpacity onPress={() => setNoteOpen(true)} style={s.ugcAddBtn}>
+                <Text style={s.ugcAddBtnText}>+ Share an insider note</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={{ gap: 8 }}>
+                <TextInput
+                  style={s.ugcInput}
+                  value={noteDraft}
+                  onChangeText={setNoteDraft}
+                  placeholder="The tip only locals know…"
+                  placeholderTextColor={colors.tx3}
+                  multiline
+                  maxLength={1000}
+                />
+                <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+                  <TouchableOpacity
+                    disabled={noteBusy}
+                    onPress={async () => {
+                      const body = noteDraft.trim()
+                      if (body.length < 20) { Alert.alert('Too short', 'At least 20 characters — make it useful.'); return }
+                      const supabase = createClient()
+                      const { data: { user } } = await supabase.auth.getUser()
+                      if (!user) { Alert.alert('Sign in required', 'Sign in to share notes.'); return }
+                      if (!site) return
+                      setNoteBusy(true)
+                      const { error } = await submitInsiderNote(site.id, user.id, body, supabase)
+                      setNoteBusy(false)
+                      if (error) { Alert.alert('Error', error); return }
+                      setNoteDraft(''); setNoteOpen(false)
+                      setUgcNotes(await getSiteInsiderNotes(site.id, supabase))
+                    }}
+                    style={s.ugcSubmitBtn}
+                  >
+                    <Text style={s.ugcSubmitText}>{noteBusy ? 'Submitting…' : 'Submit for review'}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => setNoteOpen(false)}>
+                    <Text style={{ fontSize: 12, color: colors.tx3 }}>Cancel</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </View>
+        )}
+
         {/* Photos */}
         <View style={s.section}>
           <Text style={s.sectionTitle}>PHOTOS{photos.length > 0 ? ` · ${photos.length}` : ''}</Text>
@@ -288,6 +356,31 @@ export default function SiteDetailScreen() {
 }
 
 const s = StyleSheet.create({
+  ugcNote: {
+    backgroundColor: 'rgba(0,180,216,0.06)', borderWidth: 1, borderColor: 'rgba(0,180,216,0.3)',
+    borderRadius: 12, padding: 12, gap: 6, marginTop: 8,
+  },
+  ugcPending: {
+    alignSelf: 'flex-start', fontSize: 7.5, fontWeight: '700', color: colors.warn,
+    borderWidth: 1, borderColor: colors.warn, borderRadius: 4,
+    paddingHorizontal: 4, paddingVertical: 1, letterSpacing: 0.8, overflow: 'hidden',
+  },
+  ugcBody: { fontSize: 12.5, color: colors.tx, lineHeight: 18, fontWeight: '500' },
+  ugcAuthor: { fontSize: 10, color: colors.tx3, fontFamily: Platform.select({ ios: 'Courier New', android: 'monospace' }) },
+  ugcAddBtn: {
+    alignSelf: 'flex-start', marginTop: 8,
+    borderWidth: 1, borderColor: colors.acc, borderStyle: 'dashed', borderRadius: 12,
+    paddingHorizontal: 13, paddingVertical: 9,
+  },
+  ugcAddBtnText: { fontSize: 12, fontWeight: '700', color: colors.acc },
+  ugcInput: {
+    backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, borderRadius: 12,
+    padding: 12, fontSize: 13, color: colors.tx, height: 84, textAlignVertical: 'top', marginTop: 8,
+  },
+  ugcSubmitBtn: {
+    backgroundColor: colors.acc, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10,
+  },
+  ugcSubmitText: { fontSize: 12.5, fontWeight: '700', color: '#02222e' },
   photoStrip: { flexDirection: 'row', gap: 8, paddingTop: 8 },
   photoAdd: {
     width: 96, height: 96, borderRadius: 12,

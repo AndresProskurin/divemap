@@ -38,6 +38,17 @@ export {
   getUserPhotos,
 } from './queries/profile'
 export type { UserPhoto } from './queries/profile'
+export {
+  followUser,
+  unfollowUser,
+  isFollowing,
+  getFollowCounts,
+  getFollowingIds,
+  getSiteInsiderNotes,
+  submitInsiderNote,
+  getActivityFeed,
+} from './queries/social'
+export type { FollowCounts, InsiderNote, ActivityItem, ActivityKind } from './queries/social'
 export { getUserPlans, insertPlan, deletePlan } from './queries/plans'
 export type { DivePlanWithSite } from './queries/plans'
 export type { DiveWithSite, WishlistSite, UpdateProfileInput } from './queries/profile'

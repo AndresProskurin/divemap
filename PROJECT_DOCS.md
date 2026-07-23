@@ -225,6 +225,12 @@ against the real bucket.
 
 ### 🟡 Missing integrations
 
+0. **Insider-note moderation is dashboard-SQL only.** Submissions land in
+   `insider_notes` as `pending`; there is deliberately no UPDATE policy, so approval
+   runs with the service role: `update insider_notes set status='approved' where id=…`.
+   An admin UI is future work. The activity feed polls on refresh — Supabase Realtime
+   (the plan's 5.3) is deferred to the backlog.
+
 3. **Stripe / RevenueCat** — not integrated. Premium upsell buttons exist but go nowhere.
 4. **PostHog** — provider and page-view tracker are wired; supply `NEXT_PUBLIC_POSTHOG_KEY` to activate.
 5. **Google OAuth** — needs the callback URL registered in Supabase + Google Cloud Console.
@@ -570,6 +576,9 @@ on Site URL, unauthenticated, which reads as "login did nothing".
 
 ## 15. Immediate Action Items
 
+0a. **Mobile map: my-location** (requested 2026-07-22) — expo-location permission flow,
+   blue dot + recenter button on the discovery map. Only meaningful on a real device;
+   pair with the first physical-device test session.
 0. **Tech Planner deep-work (requested 2026-07-22, research first):** custom deco gases
    (web has only the EAN50/EAN36/O₂ presets, mobile planner has none at all), automatic
    best-mix suggestion for a target depth (fO₂ from a 1.2–1.4 bar bottom ppO₂, fHe from

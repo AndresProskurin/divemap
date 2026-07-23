@@ -32,6 +32,17 @@ export type { SiteReview, SiteReviewStats, UpsertReviewInput } from './reviews'
 
 export { getMapSites } from './sites'
 export type { MapSite } from './sites'
+export {
+  followUser,
+  unfollowUser,
+  isFollowing,
+  getFollowCounts,
+  getFollowingIds,
+  getSiteInsiderNotes,
+  submitInsiderNote,
+  getActivityFeed,
+} from './social'
+export type { FollowCounts, InsiderNote, ActivityItem, ActivityKind } from './social'
 export { getUserPlans, insertPlan, deletePlan } from './plans'
 export type { DivePlanWithSite } from './plans'
 export { getUserByUsername, getUserPublicDives, getUserPhotos } from './profile'

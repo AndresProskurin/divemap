@@ -4,7 +4,8 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { createServerClient } from '@supabase/ssr'
 import type { Database, Certification, GearItem } from '@divemap/db'
-import { getUserByUsername, getUserPublicDives, getUserPhotos } from '@divemap/db'
+import { getUserByUsername, getUserPublicDives, getUserPhotos, getFollowCounts } from '@divemap/db'
+import { FollowButton } from './FollowButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -80,9 +81,10 @@ export default async function PublicProfilePage({ params }: Props) {
 
   // Everything below RLS-filters to publicly readable rows: dives require
   // is_public, photos are world-readable by policy.
-  const [dives, photos] = await Promise.all([
+  const [dives, photos, followCounts] = await Promise.all([
     getUserPublicDives(user.id, supabase, 20),
     getUserPhotos(user.id, supabase, 24),
+    getFollowCounts(user.id, supabase),
   ])
 
   const displayName = user.display_name ?? user.username ?? 'Diver'
@@ -121,6 +123,9 @@ export default async function PublicProfilePage({ params }: Props) {
           {user.home_country && (
             <span className="font-medium" style={{ fontSize: '11.5px', color: 'var(--tx3)' }}>{user.home_country}</span>
           )}
+          <div style={{ marginTop: '6px' }}>
+            <FollowButton profileUserId={user.id} initialFollowers={followCounts.followers} />
+          </div>
         </div>
       </div>
 

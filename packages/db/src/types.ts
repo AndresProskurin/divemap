@@ -677,6 +677,84 @@ export type Database = {
           },
         ]
       }
+      user_follows: {
+        Row: {
+          follower_id: string
+          followee_id: string
+          created_at: string
+        }
+        Insert: {
+          follower_id: string
+          followee_id: string
+          created_at?: string
+        }
+        Update: {
+          follower_id?: string
+          followee_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'user_follows_follower_id_fkey'
+            columns: ['follower_id']
+            isOneToOne: false
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'user_follows_followee_id_fkey'
+            columns: ['followee_id']
+            isOneToOne: false
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      insider_notes: {
+        Row: {
+          id: string
+          site_id: string
+          user_id: string
+          body: string
+          status: 'pending' | 'approved' | 'rejected'
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          site_id: string
+          user_id: string
+          body: string
+          status?: 'pending' | 'approved' | 'rejected'
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          site_id?: string
+          user_id?: string
+          body?: string
+          status?: 'pending' | 'approved' | 'rejected'
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'insider_notes_site_id_fkey'
+            columns: ['site_id']
+            isOneToOne: false
+            referencedRelation: 'dive_sites'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'insider_notes_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       wishlists: {
         Row: {
           id: string
@@ -759,6 +837,7 @@ export type Database = {
         | 'kelp'
         | 'fissure'
       current_level: 'none' | 'mild' | 'moderate' | 'strong' | 'ripping'
+      note_status: 'pending' | 'approved' | 'rejected'
       dive_level: 'beginner' | 'intermediate' | 'advanced' | 'technical'
     }
     CompositeTypes: {
